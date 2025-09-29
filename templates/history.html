@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Borrowing History - Library Management System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Borrowing History</h1>
+    
+    {% if records %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Book Title</th>
+                    <th>Author</th>
+                    <th>Borrower</th>
+                    <th>Email</th>
+                    <th>Borrow Date</th>
+                    <th>Due Date</th>
+                    <th>Return Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr>
+                    <td>{{ record.book.title }}</td>
+                    <td>{{ record.book.author }}</td>
+                    <td>{{ record.borrower_name }}</td>
+                    <td>{{ record.borrower_email }}</td>
+                    <td>{{ record.borrow_date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ record.due_date.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        {% if record.return_date %}
+                            {{ record.return_date.strftime('%Y-%m-%d') }}
+                        {% else %}
+                            <span style="color: #dc3545;">Not returned</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if record.returned %}
+                            {% if record.return_date.date() <= record.due_date.date() %}
+                                <span style="color: #28a745; font-weight: bold;">Returned on time</span>
+                            {% else %}
+                                <span style="color: #ffc107; font-weight: bold;">Returned late</span>
+                            {% endif %}
+                        {% else %}
+                            {% if record.due_date.date() < today.date() %}
+                                <span style="color: #dc3545; font-weight: bold;">Overdue</span>
+                            {% else %}
+                                <span style="color: #007bff; font-weight: bold;">Currently borrowed</span>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No borrowing history available.</p>
+    {% endif %}
+</div>
+{% endblock %}
