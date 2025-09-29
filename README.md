@@ -26,12 +26,34 @@ cd INT3505E_02_demo
 pip install -r requirements.txt
 ```
 
-3. Run the application:
+3. (Optional) Add mock data to the library:
+```bash
+python3 add_mock_data.py
+```
+
+4. Run the application:
 ```bash
 python3 app.py
 ```
 
-4. Open your web browser and navigate to `http://127.0.0.1:5000`
+5. Open your web browser and navigate to `http://127.0.0.1:5000`
+
+## Mock Data
+
+The repository includes a mock data generator (`add_mock_data.py`) that populates the library with:
+
+- **16 diverse books** across multiple genres (Fiction, Science Fiction, Fantasy, Non-Fiction, Programming)
+- **Sample borrowing records** with various statuses (current loans, overdue books, returned books)
+- **Realistic borrower information** with different borrowing patterns
+- **Historical data** showing on-time and late returns
+
+The mock data demonstrates all system features including:
+- Book availability tracking
+- Overdue detection
+- Borrowing history with status indicators
+- Mixed scenarios for testing functionality
+
+To reset the database and add fresh mock data, simply delete the `instance/library.db` file and run the mock data script again.
 
 ## Usage
 
