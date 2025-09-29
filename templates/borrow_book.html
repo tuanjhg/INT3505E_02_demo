@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Borrow Book - Library Management System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Borrow Book</h1>
+    
+    <div class="card">
+        <h3>Book Details</h3>
+        <p><strong>Title:</strong> {{ book.title }}</p>
+        <p><strong>Author:</strong> {{ book.author }}</p>
+        <p><strong>ISBN:</strong> {{ book.isbn }}</p>
+    </div>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="borrower_name">Borrower Name:</label>
+            <input type="text" id="borrower_name" name="borrower_name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="borrower_email">Borrower Email:</label>
+            <input type="email" id="borrower_email" name="borrower_email" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="days">Borrowing Period (days):</label>
+            <select id="days" name="days">
+                <option value="7">7 days</option>
+                <option value="14" selected>14 days</option>
+                <option value="21">21 days</option>
+                <option value="30">30 days</option>
+            </select>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Borrow Book</button>
+        <a href="{{ url_for('books') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}
