@@ -136,11 +136,11 @@
 </head>
 <body>
     <div class="navbar">
-        <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>Home</a>
-        <a href="{{ url_for('books') }}" {% if request.endpoint == 'books' %}class="active"{% endif %}>All Books</a>
-        <a href="{{ url_for('add_book') }}" {% if request.endpoint == 'add_book' %}class="active"{% endif %}>Add Book</a>
-        <a href="{{ url_for('borrowed_books') }}" {% if request.endpoint == 'borrowed_books' %}class="active"{% endif %}>Borrowed Books</a>
-        <a href="{{ url_for('history') }}" {% if request.endpoint == 'history' %}class="active"{% endif %}>History</a>
+        <a href="{{ url_for('web.index') }}" {% if request.endpoint == 'web.index' %}class="active"{% endif %}>Home</a>
+        <a href="{{ url_for('web.books') }}" {% if request.endpoint == 'web.books' %}class="active"{% endif %}>All Books</a>
+        <a href="{{ url_for('web.add_book') }}" {% if request.endpoint == 'web.add_book' %}class="active"{% endif %}>Add Book</a>
+        <a href="{{ url_for('web.borrowed_books') }}" {% if request.endpoint == 'web.borrowed_books' %}class="active"{% endif %}>Borrowed Books</a>
+        <a href="{{ url_for('web.history') }}" {% if request.endpoint == 'web.history' %}class="active"{% endif %}>History</a>
     </div>
 
     <div class="container">

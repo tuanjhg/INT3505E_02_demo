@@ -17,9 +17,9 @@
         
         <div class="card" style="flex: 1;">
             <h3>Quick Actions</h3>
-            <a href="{{ url_for('add_book') }}" class="btn btn-primary">Add New Book</a>
-            <a href="{{ url_for('books') }}" class="btn btn-success">View All Books</a>
-            <a href="{{ url_for('borrowed_books') }}" class="btn btn-warning">View Borrowed Books</a>
+            <a href="{{ url_for('web.add_book') }}" class="btn btn-primary">Add New Book</a>
+            <a href="{{ url_for('web.books') }}" class="btn btn-success">View All Books</a>
+            <a href="{{ url_for('web.borrowed_books') }}" class="btn btn-warning">View Borrowed Books</a>
         </div>
     </div>
 </div>
@@ -56,7 +56,7 @@
             </tbody>
         </table>
     {% else %}
-        <p>No books in the library yet. <a href="{{ url_for('add_book') }}">Add your first book</a>!</p>
+        <p>No books in the library yet. <a href="{{ url_for('web.add_book') }}">Add your first book</a>!</p>
     {% endif %}
 </div>
 {% endblock %}

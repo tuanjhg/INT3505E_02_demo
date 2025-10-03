@@ -37,7 +37,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{{ url_for('return_book', record_id=record.id) }}" class="btn btn-success"
+                        <a href="{{ url_for('web.return_book', record_id=record.id) }}" class="btn btn-success"
                            onclick="return confirm('Are you sure you want to return this book?')">Return</a>
                     </td>
                 </tr>
