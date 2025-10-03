@@ -86,24 +86,7 @@ The system uses SQLite database which is automatically created when you first ru
 - **Books table**: Stores book information (title, author, ISBN, availability status)
 - **BorrowRecords table**: Tracks all borrowing activities with dates and borrower information
 
-## File Structure
 
-```
-INT3505E_02_demo/
-├── app.py                 # Main Flask application
-├── requirements.txt       # Python dependencies
-├── templates/            # HTML templates
-│   ├── base.html         # Base template with navigation
-│   ├── index.html        # Home page
-│   ├── books.html        # All books listing
-│   ├── add_book.html     # Add book form
-│   ├── edit_book.html    # Edit book form
-│   ├── borrow_book.html  # Borrow book form
-│   ├── borrowed_books.html # Currently borrowed books
-│   └── history.html      # Borrowing history
-├── instance/             # Database directory (auto-created)
-└── README.md
-```
 
 ## Technology Stack
 
@@ -111,7 +94,3 @@ INT3505E_02_demo/
 - **Database**: SQLite with Flask-SQLAlchemy ORM
 - **Frontend**: HTML5, CSS3, JavaScript
 - **Styling**: Custom CSS with responsive design
-
-## Contributing
-
-Feel free to submit issues and enhancement requests!
