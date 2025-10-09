@@ -1,8 +1,25 @@
 # Library Management System
 
-A simple Flask-based library management system that allows you to manage books and track borrowing activities.
+A comprehensive Flask-based library management system that demonstrates RESTful architecture principles and allows you to manage books and track borrowing activities.
 
 ![Library Management System](https://github.com/user-attachments/assets/3c2836a3-3524-4601-b40a-5dbf0429d252)
+
+## 🎓 NEW: RESTful Architecture Educational Module
+
+This repository now includes a complete educational module demonstrating the **six constraints of RESTful architecture**! Each constraint is implemented in a separate, runnable example with comprehensive documentation.
+
+📂 **See**: [`LibraryManagementSystem/`](./LibraryManagementSystem/) folder for the complete RESTful architecture demonstration.
+
+### Six RESTful Constraints Demonstrated:
+
+1. **Client-Server**: Separation of concerns between UI and data storage
+2. **Stateless**: Each request contains all needed information
+3. **Cacheable**: Responses explicitly marked as cacheable or not
+4. **Layered System**: Hierarchical architecture with clear responsibilities
+5. **Uniform Interface**: Standard HTTP methods, URIs, and HATEOAS
+6. **Code-On-Demand** (Optional): Server sends executable code to client
+
+👉 **[Explore the RESTful Architecture Demo →](./LibraryManagementSystem/README.md)**
 
 ## Features
 
@@ -94,3 +111,25 @@ The system uses SQLite database which is automatically created when you first ru
 - **Database**: SQLite with Flask-SQLAlchemy ORM
 - **Frontend**: HTML5, CSS3, JavaScript
 - **Styling**: Custom CSS with responsive design
+- **API Documentation**: Flask-RESTX with Swagger UI
+- **RESTful Demo**: Complete implementation of all 6 REST constraints
+
+## Project Structure
+
+```
+INT3505E_02_demo/
+├── LibraryManagementSystem/    # 🎓 RESTful Architecture Educational Module
+│   ├── client-server/          # Constraint 1: Client-Server
+│   ├── stateless/              # Constraint 2: Stateless
+│   ├── cacheable/              # Constraint 3: Cacheable
+│   ├── layered/                # Constraint 4: Layered System
+│   ├── uniform-interface/      # Constraint 5: Uniform Interface
+│   └── code-on-demand/         # Constraint 6: Code-On-Demand (Optional)
+├── app.py                      # Main application (original)
+├── app_swagger.py              # Application with Swagger/OpenAPI
+├── models/                     # Database models
+├── routes/                     # API and web routes
+├── services/                   # Business logic layer
+├── templates/                  # HTML templates
+└── utils/                      # Helper utilities
+```
