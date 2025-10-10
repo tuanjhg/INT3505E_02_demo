@@ -44,15 +44,6 @@ python Server.py
 python Client.py
 ```
 
-### What Each Version Shows
-
-| Version | Client-Server | Cacheable | Uniform Interface | Stateless |
-|---------|---------------|-----------|-------------------|-----------|
-| **v1**  | ✅ | ❌ | ❌ | ❌ |
-| **v2**  | ✅ | ✅ | ❌ | ❌ |
-| **v3**  | ✅ | ✅ | ✅ | ❌ |
-| **v4**  | ✅ | ✅ | ✅ | ✅ |
-
 ## Key Learning Points
 
 ### Version 1 → 2: Adding Caching
@@ -112,49 +103,6 @@ response = requests.get('/api/books', headers=headers)
 # Server extracts user from token (no session lookup)
 ```
 
-## REST Benefits Demonstrated
-
-### Performance
-- **v1**: Basic functionality
-- **v2**: ⚡ Caching improves response times
-- **v3**: Same performance + better usability  
-- **v4**: Same performance + better scalability
-
-### Scalability
-- **v1**: Single server
-- **v2**: Single server with caching
-- **v3**: Single server with standard interface
-- **v4**: 🚀 Easy to scale horizontally (no sessions)
-
-### Maintainability
-- **v1**: Basic separation
-- **v2**: Cache management added
-- **v3**: 📋 Self-documenting API through HATEOAS
-- **v4**: Simpler authentication model
-
-## Original Advanced Implementations
-
-The original folders (`cacheable/`, `stateless/`, `uniform-interface/`, `client-server/`, `layered/`, `code-on-demand/`) contain more complex implementations with advanced features:
-
-- **`cacheable/`**: Advanced HTTP caching with ETags, Last-Modified headers, cache statistics
-- **`stateless/`**: Complex stateless authentication with JWT tokens
-- **`uniform-interface/`**: Full HATEOAS implementation with comprehensive hypermedia
-- **`layered/`**: Three-tier layered architecture
-- **`code-on-demand/`**: Dynamic code loading (optional REST constraint)
-
-These are kept for reference and demonstrate production-ready implementations of each constraint.
-
-## Learning Path
-
-### For Beginners: Progressive Versions
-1. **Start with Version 1** - understand basic client-server separation
-2. **Add Version 2** - see how caching improves performance  
-3. **Try Version 3** - experience uniform interface benefits
-4. **Use Version 4** - understand stateless scalability
-
-### For Advanced Users: Complete Constraints
-Explore the original folders to see production-ready implementations with full feature sets.
-
 ## Prerequisites
 ```bash
 pip install Flask Flask-SQLAlchemy requests
@@ -175,17 +123,3 @@ python Client.py
 curl http://127.0.0.1:5001/api/auth/token -X POST
 curl http://127.0.0.1:5001/api/books -H "Authorization: Bearer YOUR_TOKEN"
 ```
-
-## Next Steps
-
-Each version README has detailed explanations and examples. Start with the version that matches your learning needs:
-
-- **New to REST?** → Start with Version 1
-- **Want to see caching?** → Jump to Version 2  
-- **Need HATEOAS examples?** → Try Version 3
-- **Building scalable APIs?** → Use Version 4
-- **Production features?** → Explore original folders
-
-This progressive approach makes REST constraints easier to understand by building them up one at a time!
-
----
