@@ -30,17 +30,14 @@ def books():
         available_only=available_only
     )
     
-    # Get unique categories for filter dropdown
-    all_books = BookService.get_all_books()
-    categories = sorted(set(book.category for book in all_books if book.category))
-    
     return render_template('books.html', 
                          books=result['items'],  # Use 'items' from pagination result
                          pagination=result,      # Pass the entire result as pagination
                          search=search,
                          available_only=available_only,
                          per_page=per_page,
-                         categories=categories)
+                         total_pages=result.get('total_pages', 1),
+                         page=result.get('page', page))
 
 @web_bp.route('/add_book', methods=['GET', 'POST'])
 def add_book():

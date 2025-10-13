@@ -103,7 +103,7 @@
     {% if total_pages > 1 %}
     <div class="pagination">
         {% if page > 1 %}
-            <a href="{{ url_for('web.books', page=page-1, per_page=per_page, **request.args.to_dict(flat=False)|dictsort|list|dict) }}">« Previous</a>
+            <a href="{{ url_for('web.books', page=page-1, per_page=per_page, **request.args.to_dict(flat=False)) }}">« Previous</a>
         {% else %}
             <span class="disabled">« Previous</span>
         {% endif %}
@@ -112,14 +112,14 @@
             {% if p == page %}
                 <span class="current">{{ p }}</span>
             {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
-                <a href="{{ url_for('web.books', page=p, per_page=per_page, **request.args.to_dict(flat=False)|dictsort|list|dict) }}">{{ p }}</a>
+                <a href="{{ url_for('web.books', page=p, per_page=per_page, **request.args.to_dict(flat=False)) }}">{{ p }}</a>
             {% elif p == page - 3 or p == page + 3 %}
                 <span>...</span>
             {% endif %}
         {% endfor %}
         
         {% if page < total_pages %}
-            <a href="{{ url_for('web.books', page=page+1, per_page=per_page, **request.args.to_dict(flat=False)|dictsort|list|dict) }}">Next »</a>
+            <a href="{{ url_for('web.books', page=page+1, per_page=per_page, **request.args.to_dict(flat=False)) }}">Next »</a>
         {% else %}
             <span class="disabled">Next »</span>
         {% endif %}
@@ -135,7 +135,7 @@
         <thead>
             <tr>
                 <th>
-                    <a href="{{ url_for('web.books', sort_by='title', order=('desc' if request.args.get('sort_by') == 'title' and request.args.get('order') != 'desc' else 'asc'), **request.args.to_dict(flat=False)|dictsort|list|dict) }}" 
+                    <a href="{{ url_for('web.books', sort_by='title', order=('desc' if request.args.get('sort_by') == 'title' and request.args.get('order') != 'desc' else 'asc'), **request.args.to_dict(flat=False)) }}" 
                        style="text-decoration: none; color: inherit;">
                         📖 Title
                         {% if request.args.get('sort_by') == 'title' %}
@@ -144,7 +144,7 @@
                     </a>
                 </th>
                 <th>
-                    <a href="{{ url_for('web.books', sort_by='author', order=('desc' if request.args.get('sort_by') == 'author' and request.args.get('order') != 'desc' else 'asc'), **request.args.to_dict(flat=False)|dictsort|list|dict) }}" 
+                    <a href="{{ url_for('web.books', sort_by='author', order=('desc' if request.args.get('sort_by') == 'author' and request.args.get('order') != 'desc' else 'asc'), **request.args.to_dict(flat=False)) }}" 
                        style="text-decoration: none; color: inherit;">
                         👤 Author
                         {% if request.args.get('sort_by') == 'author' %}
@@ -155,7 +155,7 @@
                 <th>📋 ISBN</th>
                 <th>📊 Status</th>
                 <th>
-                    <a href="{{ url_for('web.books', sort_by='created_at', order=('desc' if request.args.get('sort_by') == 'created_at' and request.args.get('order') != 'desc' else 'asc'), **request.args.to_dict(flat=False)|dictsort|list|dict) }}" 
+                    <a href="{{ url_for('web.books', sort_by='created_at', order=('desc' if request.args.get('sort_by') == 'created_at' and request.args.get('order') != 'desc' else 'asc'), **request.args.to_dict(flat=False)) }}" 
                        style="text-decoration: none; color: inherit;">
                         📅 Added Date
                         {% if request.args.get('sort_by', 'created_at') == 'created_at' %}
