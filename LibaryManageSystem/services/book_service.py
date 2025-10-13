@@ -85,3 +85,36 @@ class BookService:
         return Book.query.filter(
             Book.title.contains(query) | Book.author.contains(query)
         ).all()
+    
+    @staticmethod
+    def search_and_paginate_books(search_params, page=1, per_page=10):
+        """Search books with pagination and advanced filtering"""
+        from utils.pagination_helpers import PaginationHelper, SearchFilter
+        
+        # Start with base query
+        query = Book.query
+        
+        # Apply search filters
+        query = SearchFilter.apply_book_filters(query, search_params)
+        
+        # Apply pagination
+        paginated_result = PaginationHelper.paginate_query(query, page, per_page)
+        
+        return paginated_result
+    
+    @staticmethod
+    def get_books_paginated(page=1, per_page=10, search=None, available_only=False):
+        """Get paginated books with search and filtering support (simplified)"""
+        from utils.pagination_helpers import PaginationHelper, SearchFilter
+        
+        # Prepare search parameters (simplified)
+        search_params = {
+            'search': search or '',
+            'available_only': available_only
+        }
+        
+        # Use the existing search_and_paginate_books method
+        result = BookService.search_and_paginate_books(search_params, page, per_page)
+        
+        return result
+    

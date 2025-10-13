@@ -38,20 +38,48 @@ error_response_model = book_ns.model('ErrorResponse', {
 class BookList(Resource):
     @book_ns.doc('get_books')
     @book_ns.marshal_with(success_response_model)
+    @book_ns.param('page', 'Page number (default: 1)', type='integer', default=1)
+    @book_ns.param('per_page', 'Items per page (5, 10, 15)', type='integer', default=10, enum=[5, 10, 15])
     @book_ns.param('search', 'Search query for title or author', type='string', required=False)
+    @book_ns.param('available_only', 'Show only available books', type='boolean', default=False)
     def get(self):
-        """Get all books or search books"""
+        """Get all books with search, filtering, and pagination"""
         try:
-            query = request.args.get('search')
+            from utils.pagination_helpers import PaginationHelper
             
-            if query:
-                books = BookService.search_books(query)
-            else:
-                books = BookService.get_all_books()
+            # Get pagination parameters
+            page, per_page = PaginationHelper.get_pagination_params()
+            
+            # Get search parameters (simplified)
+            search = request.args.get('search', '').strip()
+            available_only = request.args.get('available_only', 'false').lower() == 'true'
+            
+            # Prepare simplified search parameters
+            search_params = {
+                'search': search,
+                'available_only': available_only
+            }
+            
+            # Perform search with pagination
+            result = BookService.search_and_paginate_books(search_params, page, per_page)
+            
+            # Build pagination info
+            pagination_info = PaginationHelper.build_pagination_response(result, 'books_book_list')
+            
+            # Prepare response data
+            response_data = {
+                'books': [book.to_dict() for book in result['items']],
+                'pagination': pagination_info,
+                'filters': {
+                    'search': search or None,
+                    'available_only': available_only
+                },
+                'total_filtered': result['total']
+            }
             
             return success_response(
-                data=[book.to_dict() for book in books],
-                message=f"Found {len(books)} books"
+                data=response_data,
+                message=f"Found {result['total']} books (page {page} of {result['pages']})"
             )
         except Exception as e:
             return error_response("Internal server error", 500)
@@ -88,13 +116,46 @@ class BookList(Resource):
 class AvailableBooks(Resource):
     @book_ns.doc('get_available_books')
     @book_ns.marshal_with(success_response_model)
+    @book_ns.param('page', 'Page number (default: 1)', type='integer', default=1)
+    @book_ns.param('per_page', 'Items per page (5, 10, 15)', type='integer', default=10, enum=[5, 10, 15])
+    @book_ns.param('search', 'Search query for title or author', type='string', required=False)
     def get(self):
-        """Get all available books"""
+        """Get all available books with search and pagination"""
         try:
-            books = BookService.get_available_books()
+            from utils.pagination_helpers import PaginationHelper
+            
+            # Get pagination parameters
+            page, per_page = PaginationHelper.get_pagination_params()
+            
+            # Get search parameters (simplified) and force available_only to True
+            search = request.args.get('search', '').strip()
+            
+            # Prepare simplified search parameters
+            search_params = {
+                'search': search,
+                'available_only': True  # Force available only
+            }
+            
+            # Perform search with pagination
+            result = BookService.search_and_paginate_books(search_params, page, per_page)
+            
+            # Build pagination info
+            pagination_info = PaginationHelper.build_pagination_response(result, 'books_available_books')
+            
+            # Prepare response data
+            response_data = {
+                'books': [book.to_dict() for book in result['items']],
+                'pagination': pagination_info,
+                'filters': {
+                    'search': search or None,
+                    'available_only': True
+                },
+                'total_filtered': result['total']
+            }
+            
             return success_response(
-                data=[book.to_dict() for book in books],
-                message=f"Found {len(books)} available books"
+                data=response_data,
+                message=f"Found {result['total']} available books (page {page} of {result['pages']})"
             )
         except Exception as e:
             return error_response("Internal server error", 500)

@@ -17,6 +17,9 @@ def create_app(config=None):
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['DEBUG'] = os.getenv('DEBUG', 'True').lower() == 'true'
     
+    # Disable X-Fields in Swagger
+    app.config['RESTX_MASK_SWAGGER'] = False
+    
     if config:
         app.config.update(config)
     

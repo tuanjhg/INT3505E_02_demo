@@ -94,3 +94,35 @@ class BorrowService:
         db.session.commit()
         
         return record
+    
+    @staticmethod
+    def search_and_paginate_borrows(search_params, page=1, per_page=10):
+        """Search borrow records with pagination and filtering"""
+        from utils.pagination_helpers import PaginationHelper, SearchFilter
+        
+        # Start with base query
+        query = BorrowRecord.query
+        
+        # Apply search filters
+        query = SearchFilter.apply_borrow_filters(query, search_params)
+        
+        # Apply pagination
+        paginated_result = PaginationHelper.paginate_query(query, page, per_page)
+        
+        return paginated_result
+    
+    @staticmethod
+    def get_borrows_paginated(page=1, per_page=10, search=None, status=None):
+        """Get paginated borrow records with search and filtering support (simplified)"""
+        from utils.pagination_helpers import PaginationHelper, SearchFilter
+        
+        # Prepare search parameters (simplified)
+        search_params = {
+            'search': search or '',
+            'status': status or ''
+        }
+        
+        # Use the existing search_and_paginate_borrows method
+        result = BorrowService.search_and_paginate_borrows(search_params, page, per_page)
+        
+        return result

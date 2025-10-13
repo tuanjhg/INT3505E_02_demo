@@ -177,8 +177,8 @@ if __name__ == '__main__':
             db.session.commit()
             print("Sample books added")
     
-    print("📚 Swagger UI: http://127.0.0.1:5003/swagger/")
-    print("🔗 API Root: http://127.0.0.1:5003/api")
-    print("🏥 Health Check: http://127.0.0.1:5003/api/health")
+    print("📚 Swagger UI: http://127.0.0.1:5001/swagger/")
+    print("🔗 API Root: http://127.0.0.1:5001/api")
+    print("🏥 Health Check: http://127.0.0.1:5001/api/health")
     
-    app.run(debug=True, port=5003)
+    app.run(debug=True, port=5001)

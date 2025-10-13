@@ -55,28 +55,54 @@ error_response_model = borrow_ns.model('ErrorResponse', {
 class BorrowList(Resource):
     @borrow_ns.doc('get_borrow_records')
     @borrow_ns.marshal_with(success_response_model)
-    @borrow_ns.param('active', 'Filter for active borrows only', type='boolean', required=False)
-    @borrow_ns.param('overdue', 'Filter for overdue borrows only', type='boolean', required=False)
-    @borrow_ns.param('borrower_email', 'Filter by borrower email', type='string', required=False)
+    @borrow_ns.param('page', 'Page number (default: 1)', type='integer', default=1)
+    @borrow_ns.param('per_page', 'Items per page (5, 10, 15)', type='integer', default=10, enum=[5, 10, 15])
+    @borrow_ns.param('search', 'Search by borrower name or email', type='string', required=False)
+    @borrow_ns.param('status', 'Filter by status (borrowed, returned, overdue)', type='string', required=False, enum=['borrowed', 'returned', 'overdue'])
     def get(self):
-        """Get all borrow records with optional filtering"""
+        """Get all borrow records with search, filtering, and pagination"""
         try:
-            active_only = request.args.get('active', '').lower() == 'true'
-            overdue_only = request.args.get('overdue', '').lower() == 'true'
-            borrower_email = request.args.get('borrower_email')
+            from utils.pagination_helpers import PaginationHelper
             
-            if borrower_email:
-                records = BorrowService.get_borrower_history(borrower_email)
-            elif overdue_only:
-                records = BorrowService.get_overdue_borrows()
-            elif active_only:
-                records = BorrowService.get_active_borrows()
-            else:
-                records = BorrowService.get_all_borrow_records()
+            # Get pagination parameters
+            page, per_page = PaginationHelper.get_pagination_params()
+            
+            # Get search parameters (simplified)
+            search = request.args.get('search', '').strip()
+            status = request.args.get('status', '').strip()
+            
+            # Prepare simplified search parameters
+            search_params = {
+                'search': search,
+                'status': status
+            }
+            
+            # Handle legacy parameters for backward compatibility
+            if request.args.get('active', '').lower() == 'true':
+                search_params['status'] = 'borrowed'
+            elif request.args.get('overdue', '').lower() == 'true':
+                search_params['status'] = 'overdue'
+            
+            # Perform search with pagination
+            result = BorrowService.search_and_paginate_borrows(search_params, page, per_page)
+            
+            # Build pagination info
+            pagination_info = PaginationHelper.build_pagination_response(result, 'borrows_borrow_list')
+            
+            # Prepare response data
+            response_data = {
+                'borrows': [record.to_dict() for record in result['items']],
+                'pagination': pagination_info,
+                'filters': {
+                    'search': search or None,
+                    'status': status or None
+                },
+                'total_filtered': result['total']
+            }
             
             return success_response(
-                data=[record.to_dict() for record in records],
-                message=f"Found {len(records)} borrow records"
+                data=response_data,
+                message=f"Found {result['total']} borrow records (page {page} of {result['pages']})"
             )
         except Exception as e:
             return error_response("Internal server error", 500)
