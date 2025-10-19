@@ -1,16 +1,99 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from datetime import datetime
 from services.book_service import BookService
 from services.borrow_service import BorrowService
+from services.auth_service import AuthService
+from utils.auth_middleware import login_required
 
 web_bp = Blueprint('web', __name__)
 
 @web_bp.route('/')
+@login_required
 def index():
     books = BookService.get_all_books()
     return render_template('index.html', books=books)
 
+@web_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    # If already logged in, redirect to index
+    if 'user_id' in session:
+        return redirect(url_for('web.index'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if not username or not password:
+            flash('Username and password are required', 'error')
+            return render_template('login.html')
+        
+        user, error = AuthService.authenticate_user(username, password)
+        
+        if error:
+            flash(error, 'error')
+            return render_template('login.html')
+        
+        # Set session
+        session['user_id'] = user.id
+        session['username'] = user.username
+        session['is_admin'] = user.is_admin
+        session.permanent = True  # Make session permanent
+        
+        flash('Login successful!', 'success')
+        
+        # Redirect to next page or index
+        next_page = request.args.get('next')
+        return redirect(next_page if next_page else url_for('web.index'))
+    
+    return render_template('login.html')
+
+@web_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    # If already logged in, redirect to index
+    if 'user_id' in session:
+        return redirect(url_for('web.index'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        full_name = request.form.get('full_name')
+        
+        if not username or not email or not password:
+            flash('Username, email, and password are required', 'error')
+            return render_template('register.html')
+        
+        user, error = AuthService.create_user(
+            username=username,
+            email=email,
+            password=password,
+            full_name=full_name
+        )
+        
+        if error:
+            flash(error, 'error')
+            return render_template('register.html')
+        
+        # Auto-login after registration
+        session['user_id'] = user.id
+        session['username'] = user.username
+        session['is_admin'] = user.is_admin
+        session.permanent = True
+        
+        flash('Registration successful! Welcome!', 'success')
+        return redirect(url_for('web.index'))
+    
+    return render_template('register.html')
+
+@web_bp.route('/logout')
+def logout():
+    # Clear session
+    session.clear()
+    flash('You have been logged out', 'success')
+    return redirect(url_for('web.login'))
+
 @web_bp.route('/books')
+@login_required
 def books():
     # Get search and pagination parameters from request (simplified)
     search = request.args.get('search', '').strip()
@@ -40,6 +123,7 @@ def books():
                          page=result.get('page', page))
 
 @web_bp.route('/add_book', methods=['GET', 'POST'])
+@login_required
 def add_book():
     if request.method == 'POST':
         data = {
@@ -58,6 +142,7 @@ def add_book():
     return render_template('add_book.html')
 
 @web_bp.route('/edit_book/<int:book_id>', methods=['GET', 'POST'])
+@login_required
 def edit_book(book_id):
     book = BookService.get_book_by_id(book_id)
     if not book:
@@ -81,6 +166,7 @@ def edit_book(book_id):
     return render_template('edit_book.html', book=book)
 
 @web_bp.route('/delete_book/<int:book_id>')
+@login_required
 def delete_book(book_id):
     try:
         BookService.delete_book(book_id)
@@ -91,6 +177,7 @@ def delete_book(book_id):
     return redirect(url_for('web.books'))
 
 @web_bp.route('/borrow_book/<int:book_id>', methods=['GET', 'POST'])
+@login_required
 def borrow_book(book_id):
     book = BookService.get_book_by_id(book_id)
     if not book:
@@ -119,6 +206,7 @@ def borrow_book(book_id):
     return render_template('borrow_book.html', book=book)
 
 @web_bp.route('/borrowed_books')
+@login_required
 def borrowed_books():
     # Get search and pagination parameters from request (simplified)
     search = request.args.get('search', '').strip()
@@ -151,6 +239,7 @@ def borrowed_books():
         return render_template('borrowed_books.html', records=records, today=datetime.utcnow())
 
 @web_bp.route('/return_book/<int:record_id>')
+@login_required
 def return_book(record_id):
     try:
         BorrowService.return_book(record_id)
@@ -161,6 +250,7 @@ def return_book(record_id):
     return redirect(url_for('web.borrowed_books'))
 
 @web_bp.route('/history')
+@login_required
 def history():
     # Get search and pagination parameters from request (simplified)
     search = request.args.get('search', '').strip()

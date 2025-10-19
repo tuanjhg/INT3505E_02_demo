@@ -17,6 +17,11 @@ def create_app(config=None):
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['DEBUG'] = os.getenv('DEBUG', 'True').lower() == 'true'
     
+    # Session configuration
+    app.config['SESSION_TYPE'] = 'filesystem'
+    app.config['SESSION_PERMANENT'] = True
+    app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 hours in seconds
+    
     # Disable X-Fields in Swagger
     app.config['RESTX_MASK_SWAGGER'] = False
     
@@ -29,6 +34,7 @@ def create_app(config=None):
     # Import models to ensure they are registered with SQLAlchemy
     from models.book import Book
     from models.borrow import BorrowRecord
+    from models.user import User
     
     # Initialize Swagger API
     api = Api(
@@ -37,16 +43,26 @@ def create_app(config=None):
         title=os.getenv('API_TITLE', 'Library Management API'),
         description=os.getenv('API_DESCRIPTION', 'A comprehensive library management system API'),
         doc='/swagger/',  # Swagger UI will be available at /swagger/
-        prefix='/api'
+        prefix='/api',
+        authorizations={
+            'apikey': {
+                'type': 'apiKey',
+                'in': 'header',
+                'name': 'Authorization',
+                'description': 'JWT token format: Bearer <token>'
+            }
+        },
+        security='apikey'
     )
     
     # Register API namespaces
     from routes.book_routes_swagger import book_ns
     from routes.borrow_routes_swagger import borrow_ns
+    from routes.auth_routes_swagger import auth_ns
     
+    api.add_namespace(auth_ns)
     api.add_namespace(book_ns)
     api.add_namespace(borrow_ns)
-    
     # Register web routes (for backward compatibility)
     from routes.web_routes import web_bp
     app.register_blueprint(web_bp)

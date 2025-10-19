@@ -2,13 +2,15 @@ from flask import jsonify
 from functools import wraps
 
 def api_response(success=True, data=None, message=None, status_code=200):
-    """Standard API response format"""
+    """Standard API response format - returns dict for flask-restx compatibility"""
     response = {
         "success": success,
         "message": message,
         "data": data
     }
-    return jsonify(response), status_code
+    # Return tuple of (dict, status_code) for flask-restx
+    # Flask-restx will handle JSON serialization
+    return response, status_code
 
 def success_response(data=None, message="Success", status_code=200):
     """Success response helper"""

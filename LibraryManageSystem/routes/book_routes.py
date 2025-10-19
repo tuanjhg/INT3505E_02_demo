@@ -1,7 +1,7 @@
 from flask import request
 from flask_restx import Namespace, Resource
 from services.book_service import BookService
-from utils.response_helpers import success_response, error_response, handle_service_error
+from utils.response_helpers import success_response, error_response, handle_service_error, validate_json
 from utils.swagger_models import create_api_models
 
 # Create namespace for books API
@@ -15,7 +15,7 @@ def init_book_models(api):
     global models
     models = create_api_models(api)
 
-@book_bp.route('', methods=['GET'])
+@book_ns.route('', methods=['GET'])
 @handle_service_error
 def get_books():
     """Get all books or search books"""
@@ -31,7 +31,7 @@ def get_books():
         message=f"Found {len(books)} books"
     )
 
-@book_bp.route('/available', methods=['GET'])
+@book_ns.route('/available', methods=['GET'])
 @handle_service_error
 def get_available_books():
     """Get all available books"""
@@ -41,7 +41,7 @@ def get_available_books():
         message=f"Found {len(books)} available books"
     )
 
-@book_bp.route('/<int:book_id>', methods=['GET'])
+@book_ns.route('/<int:book_id>', methods=['GET'])
 @handle_service_error
 def get_book(book_id):
     """Get a specific book by ID"""
@@ -54,7 +54,7 @@ def get_book(book_id):
         message="Book retrieved successfully"
     )
 
-@book_bp.route('', methods=['POST'])
+@book_ns.route('', methods=['POST'])
 @validate_json(['title', 'author', 'isbn'])
 @handle_service_error
 def create_book(data):
@@ -66,7 +66,7 @@ def create_book(data):
         status_code=201
     )
 
-@book_bp.route('/<int:book_id>', methods=['PUT'])
+@book_ns.route('/<int:book_id>', methods=['PUT'])
 @validate_json()
 @handle_service_error
 def update_book(data, book_id):
@@ -77,7 +77,7 @@ def update_book(data, book_id):
         message="Book updated successfully"
     )
 
-@book_bp.route('/<int:book_id>', methods=['DELETE'])
+@book_ns.route('/<int:book_id>', methods=['DELETE'])
 @handle_service_error
 def delete_book(book_id):
     """Delete a book"""

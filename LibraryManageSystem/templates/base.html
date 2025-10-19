@@ -20,6 +20,18 @@
             background-color: #333;
             padding: 1rem;
             margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar-left {
+            display: flex;
+            align-items: center;
+        }
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .navbar a {
             color: white;
@@ -33,6 +45,24 @@
         }
         .navbar a.active {
             background-color: #007bff;
+        }
+        .user-info {
+            color: white;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 10px;
+            background-color: #444;
+            border-radius: 5px;
+        }
+        .user-info.show {
+            display: flex;
+        }
+        .auth-links {
+            display: none;
+        }
+        .auth-links.show {
+            display: block;
         }
         .card {
             background: white;
@@ -267,11 +297,32 @@
 </head>
 <body>
     <div class="navbar">
-        <a href="{{ url_for('web.index') }}" {% if request.endpoint == 'web.index' %}class="active"{% endif %}>Home</a>
-        <a href="{{ url_for('web.books') }}" {% if request.endpoint == 'web.books' %}class="active"{% endif %}>All Books</a>
-        <a href="{{ url_for('web.add_book') }}" {% if request.endpoint == 'web.add_book' %}class="active"{% endif %}>Add Book</a>
-        <a href="{{ url_for('web.borrowed_books') }}" {% if request.endpoint == 'web.borrowed_books' %}class="active"{% endif %}>Borrowed Books</a>
-        <a href="{{ url_for('web.history') }}" {% if request.endpoint == 'web.history' %}class="active"{% endif %}>History</a>
+        <div class="navbar-left">
+            {% if session.get('user_id') %}
+            <a href="{{ url_for('web.index') }}" {% if request.endpoint == 'web.index' %}class="active"{% endif %}>Home</a>
+            <a href="{{ url_for('web.books') }}" {% if request.endpoint == 'web.books' %}class="active"{% endif %}>All Books</a>
+            <a href="{{ url_for('web.borrowed_books') }}" {% if request.endpoint == 'web.borrowed_books' %}class="active"{% endif %}>Borrowed Books</a>
+            <a href="{{ url_for('web.history') }}" {% if request.endpoint == 'web.history' %}class="active"{% endif %}>History</a>
+            {% else %}
+            <a href="{{ url_for('web.login') }}">Library Management System</a>
+            {% endif %}
+        </div>
+        <div class="navbar-right">
+            {% if session.get('user_id') %}
+            <div class="user-info show">
+                <span>{{ session.get('username') }}</span>
+                {% if session.get('is_admin') %}
+                <span style="background: #ffc107; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 11px;">ADMIN</span>
+                {% endif %}
+                <a href="{{ url_for('web.logout') }}" class="btn btn-secondary" style="margin: 0; padding: 5px 10px;">Logout</a>
+            </div>
+            {% else %}
+            <div class="auth-links show">
+                <a href="{{ url_for('web.login') }}" {% if request.endpoint == 'web.login' %}class="active"{% endif %}>Login</a>
+                <a href="{{ url_for('web.register') }}" {% if request.endpoint == 'web.register' %}class="active"{% endif %}>Register</a>
+            </div>
+            {% endif %}
+        </div>
     </div>
 
     <div class="container">
