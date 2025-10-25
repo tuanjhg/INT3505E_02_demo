@@ -1,0 +1,1037 @@
+openapi: 3.0.3
+info:
+  title: Library Management API
+  description: |
+    A comprehensive library management system API with authentication, book management, and borrowing features.
+    
+    ## Features
+    - JWT Authentication with access & refresh tokens
+    - HttpOnly Cookie support for enhanced security
+    - Book CRUD operations with search and pagination
+    - Borrowing system with due dates and extensions
+    - Overdue tracking
+    
+    ## Authentication
+    Most endpoints require JWT authentication. Include the access token in the Authorization header:
+    ```
+    Authorization: Bearer <access_token>
+    ```
+    
+  version: 1.0.0
+  contact:
+    name: Library Management System
+    email: support@library.example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:5000/api
+    description: Local development server
+  - url: https://api.library.example.com/api
+    description: Production server
+
+tags:
+  - name: auth
+    description: Authentication and user management
+  - name: books
+    description: Book management operations
+  - name: borrows
+    description: Book borrowing operations
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT authorization using the Bearer scheme
+    
+  schemas:
+    # Authentication Models
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: admin
+          description: Username for authentication
+        password:
+          type: string
+          format: password
+          example: admin123
+          description: User password
+    
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          example: johndoe
+          description: Unique username
+        email:
+          type: string
+          format: email
+          example: john@example.com
+          description: User email address
+        password:
+          type: string
+          format: password
+          minLength: 6
+          example: password123
+          description: User password (minimum 6 characters)
+        full_name:
+          type: string
+          maxLength: 100
+          example: John Doe
+          description: Full name of the user
+    
+    TokenResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Login successful
+        data:
+          type: object
+          properties:
+            access_token:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+              description: JWT access token (expires in 15 minutes)
+            refresh_token:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+              description: JWT refresh token (expires in 30 days)
+            token_type:
+              type: string
+              example: Bearer
+            expires_in:
+              type: integer
+              example: 900
+              description: Access token expiration time in seconds
+            user:
+              $ref: '#/components/schemas/User'
+    
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: admin
+        email:
+          type: string
+          format: email
+          example: admin@library.com
+        full_name:
+          type: string
+          example: Admin User
+        is_admin:
+          type: boolean
+          example: true
+        is_active:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+          example: 2025-01-01T00:00:00Z
+        last_login:
+          type: string
+          format: date-time
+          example: 2025-10-25T08:30:00Z
+    
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          description: Refresh token to obtain new access token
+    
+    # Book Models
+    Book:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          readOnly: true
+        title:
+          type: string
+          maxLength: 100
+          example: The Great Gatsby
+          description: Book title
+        author:
+          type: string
+          maxLength: 100
+          example: F. Scott Fitzgerald
+          description: Book author
+        isbn:
+          type: string
+          maxLength: 13
+          example: "9780743273565"
+          description: ISBN number
+        available:
+          type: boolean
+          example: true
+          readOnly: true
+          description: Availability status
+        created_at:
+          type: string
+          format: date-time
+          example: 2025-01-01T00:00:00Z
+          readOnly: true
+    
+    BookInput:
+      type: object
+      required:
+        - title
+        - author
+        - isbn
+      properties:
+        title:
+          type: string
+          maxLength: 100
+          example: The Great Gatsby
+        author:
+          type: string
+          maxLength: 100
+          example: F. Scott Fitzgerald
+        isbn:
+          type: string
+          maxLength: 13
+          example: "9780743273565"
+    
+    BookListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Books retrieved successfully
+        data:
+          type: object
+          properties:
+            books:
+              type: array
+              items:
+                $ref: '#/components/schemas/Book'
+            pagination:
+              $ref: '#/components/schemas/Pagination'
+    
+    # Borrow Models
+    BorrowRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          readOnly: true
+        book_id:
+          type: integer
+          example: 1
+        book:
+          $ref: '#/components/schemas/Book'
+        borrower_name:
+          type: string
+          example: John Doe
+        borrower_email:
+          type: string
+          format: email
+          example: john@example.com
+        borrow_date:
+          type: string
+          format: date-time
+          example: 2025-10-01T10:00:00Z
+        due_date:
+          type: string
+          format: date-time
+          example: 2025-10-15T10:00:00Z
+        return_date:
+          type: string
+          format: date-time
+          example: 2025-10-14T15:30:00Z
+          nullable: true
+        returned:
+          type: boolean
+          example: false
+        is_overdue:
+          type: boolean
+          example: false
+    
+    BorrowInput:
+      type: object
+      required:
+        - book_id
+        - borrower_name
+        - borrower_email
+      properties:
+        book_id:
+          type: integer
+          example: 1
+          description: ID of the book to borrow
+        borrower_name:
+          type: string
+          maxLength: 100
+          example: John Doe
+        borrower_email:
+          type: string
+          format: email
+          maxLength: 100
+          example: john@example.com
+        days:
+          type: integer
+          minimum: 1
+          maximum: 90
+          default: 14
+          example: 14
+          description: Borrowing period in days
+    
+    ExtendInput:
+      type: object
+      required:
+        - additional_days
+      properties:
+        additional_days:
+          type: integer
+          minimum: 1
+          maximum: 30
+          example: 7
+          description: Additional days to extend the due date
+    
+    # Common Models
+    Pagination:
+      type: object
+      properties:
+        current_page:
+          type: integer
+          example: 1
+        per_page:
+          type: integer
+          example: 10
+        total_items:
+          type: integer
+          example: 50
+        total_pages:
+          type: integer
+          example: 5
+        has_next:
+          type: boolean
+          example: true
+        has_prev:
+          type: boolean
+          example: false
+        next_page:
+          type: integer
+          nullable: true
+          example: 2
+        prev_page:
+          type: integer
+          nullable: true
+          example: null
+    
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Operation successful
+        data:
+          type: object
+          additionalProperties: true
+    
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: An error occurred
+        data:
+          type: object
+          nullable: true
+          additionalProperties: true
+
+paths:
+  # Authentication Endpoints
+  /auth/login:
+    post:
+      tags:
+        - auth
+      summary: User login
+      description: |
+        Authenticate user with username and password.
+        Returns JWT access token, refresh token, and sets HttpOnly cookie.
+        
+        **Storage locations:**
+        - Access token: localStorage, sessionStorage
+        - Refresh token: localStorage, sessionStorage, HttpOnly cookie
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          headers:
+            Set-Cookie:
+              description: HttpOnly cookie with refresh token
+              schema:
+                type: string
+                example: refresh_token=eyJ...; HttpOnly; SameSite=Lax; Max-Age=2592000
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Bad request - missing credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /auth/register:
+    post:
+      tags:
+        - auth
+      summary: Register new user
+      description: Create a new user account and return authentication tokens
+      operationId: register
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          headers:
+            Set-Cookie:
+              description: HttpOnly cookie with refresh token
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Validation error or user already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /auth/logout:
+    post:
+      tags:
+        - auth
+      summary: User logout
+      description: Revoke refresh token and clear HttpOnly cookie
+      operationId: logout
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /auth/me:
+    get:
+      tags:
+        - auth
+      summary: Get current user information
+      description: Retrieve information about the authenticated user
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: User information retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /auth/verify:
+    get:
+      tags:
+        - auth
+      summary: Verify token validity
+      description: Check if the provided JWT token is valid
+      operationId: verifyToken
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          valid:
+                            type: boolean
+                            example: true
+                          user_id:
+                            type: integer
+                            example: 1
+        '401':
+          description: Token is invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /auth/refresh:
+    post:
+      tags:
+        - auth
+      summary: Refresh access token
+      description: Obtain a new access token using a valid refresh token
+      operationId: refreshToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Access token refreshed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          access_token:
+                            type: string
+                            example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '400':
+          description: Refresh token is required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  # Book Endpoints
+  /books:
+    get:
+      tags:
+        - books
+      summary: Get all books
+      description: Retrieve a paginated list of books with optional search and filtering
+      operationId: getBooks
+      security: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: per_page
+          in: query
+          description: Items per page
+          schema:
+            type: integer
+            enum: [5, 10, 15]
+            default: 10
+        - name: search
+          in: query
+          description: Search query for title or author
+          schema:
+            type: string
+        - name: available_only
+          in: query
+          description: Show only available books
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Books retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookListResponse'
+        '400':
+          description: Invalid pagination parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags:
+        - books
+      summary: Create a new book
+      description: Add a new book to the library
+      operationId: createBook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookInput'
+      responses:
+        '201':
+          description: Book created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Book'
+        '400':
+          description: Validation error or duplicate ISBN
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /books/{book_id}:
+    get:
+      tags:
+        - books
+      summary: Get book by ID
+      description: Retrieve details of a specific book
+      operationId: getBookById
+      security: []
+      parameters:
+        - name: book_id
+          in: path
+          required: true
+          description: Book ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Book found
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Book'
+        '404':
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    put:
+      tags:
+        - books
+      summary: Update book
+      description: Update an existing book's information
+      operationId: updateBook
+      parameters:
+        - name: book_id
+          in: path
+          required: true
+          description: Book ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookInput'
+      responses:
+        '200':
+          description: Book updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Book'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    delete:
+      tags:
+        - books
+      summary: Delete book
+      description: Delete a book from the library
+      operationId: deleteBook
+      parameters:
+        - name: book_id
+          in: path
+          required: true
+          description: Book ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Book deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Book is currently borrowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  # Borrow Endpoints
+  /borrows:
+    get:
+      tags:
+        - borrows
+      summary: Get all borrow records
+      description: Retrieve a paginated list of borrow records with optional filtering
+      operationId: getBorrows
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          description: Items per page
+          schema:
+            type: integer
+            enum: [5, 10, 15]
+            default: 10
+        - name: returned
+          in: query
+          description: Filter by return status
+          schema:
+            type: boolean
+        - name: overdue_only
+          in: query
+          description: Show only overdue records
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Borrow records retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          borrows:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/BorrowRecord'
+                          pagination:
+                            $ref: '#/components/schemas/Pagination'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags:
+        - borrows
+      summary: Borrow a book
+      description: Create a new borrow record for a book
+      operationId: borrowBook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BorrowInput'
+      responses:
+        '201':
+          description: Book borrowed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BorrowRecord'
+        '400':
+          description: Validation error or book not available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /borrows/{borrow_id}:
+    get:
+      tags:
+        - borrows
+      summary: Get borrow record by ID
+      description: Retrieve details of a specific borrow record
+      operationId: getBorrowById
+      parameters:
+        - name: borrow_id
+          in: path
+          required: true
+          description: Borrow record ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Borrow record found
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BorrowRecord'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Borrow record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /borrows/{borrow_id}/return:
+    post:
+      tags:
+        - borrows
+      summary: Return a borrowed book
+      description: Mark a borrow record as returned
+      operationId: returnBook
+      parameters:
+        - name: borrow_id
+          in: path
+          required: true
+          description: Borrow record ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Book returned successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BorrowRecord'
+        '400':
+          description: Book already returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Borrow record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /borrows/{borrow_id}/extend:
+    post:
+      tags:
+        - borrows
+      summary: Extend borrowing period
+      description: Extend the due date of a borrowed book
+      operationId: extendBorrow
+      parameters:
+        - name: borrow_id
+          in: path
+          required: true
+          description: Borrow record ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtendInput'
+      responses:
+        '200':
+          description: Borrow period extended successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BorrowRecord'
+        '400':
+          description: Book already returned or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Borrow record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

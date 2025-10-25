@@ -4,7 +4,6 @@ from flask_restx import Api
 from dotenv import load_dotenv
 from models import db
 
-# Load environment variables
 load_dotenv()
 
 def create_app(config=None):
@@ -20,23 +19,23 @@ def create_app(config=None):
     # Session configuration
     app.config['SESSION_TYPE'] = 'filesystem'
     app.config['SESSION_PERMANENT'] = True
-    app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 hours in seconds
+    app.config['PERMANENT_SESSION_LIFETIME'] = 86400 
     
-    # Disable X-Fields in Swagger
+
     app.config['RESTX_MASK_SWAGGER'] = False
     
     if config:
         app.config.update(config)
     
-    # Initialize extensions
+
     db.init_app(app)
     
-    # Import models to ensure they are registered with SQLAlchemy
+
     from models.book import Book
     from models.borrow import BorrowRecord
     from models.user import User
     
-    # Initialize Swagger API
+
     api = Api(
         app,
         version=os.getenv('API_VERSION', '1.0'),
@@ -63,7 +62,6 @@ def create_app(config=None):
     api.add_namespace(auth_ns)
     api.add_namespace(book_ns)
     api.add_namespace(borrow_ns)
-    # Register web routes (for backward compatibility)
     from routes.web_routes import web_bp
     app.register_blueprint(web_bp)
     

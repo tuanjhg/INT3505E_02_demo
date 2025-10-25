@@ -1,0 +1,910 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Library Management API",
+    "description": "A comprehensive library management system API",
+    "version": "1.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000/api",
+      "description": "API Server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "auth",
+      "description": "Authentication operations"
+    },
+    {
+      "name": "books",
+      "description": "Book management operations"
+    },
+    {
+      "name": "borrows",
+      "description": "Book borrowing operations"
+    }
+  ],
+  "paths": {
+    "/books": {
+      "get": {
+        "summary": "Get all books with search, filtering, and pagination",
+        "operationId": "get_books",
+        "tags": [
+          "books"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "available_only",
+            "in": "query",
+            "description": "Show only available books",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Search query for title or author",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Items per page (5, 10, 15)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                5,
+                10,
+                15
+              ],
+              "default": 10
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (default: 1)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Create a new book",
+        "operationId": "create_book",
+        "tags": [
+          "books"
+        ],
+        "responses": {
+          "400": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/definitions/BookInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/books/available": {
+      "get": {
+        "summary": "Get all available books with search and pagination",
+        "operationId": "get_available_books",
+        "tags": [
+          "books"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Search query for title or author",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Items per page (5, 10, 15)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                5,
+                10,
+                15
+              ],
+              "default": 10
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (default: 1)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ]
+      }
+    },
+    "/books/{book_id}": {
+      "delete": {
+        "summary": "Delete a book",
+        "operationId": "delete_book",
+        "tags": [
+          "books"
+        ],
+        "responses": {
+          "404": {
+            "description": "Book not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Cannot delete borrowed book",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorResponse"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/SuccessResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get a specific book by ID",
+        "operationId": "get_book",
+        "tags": [
+          "books"
+        ],
+        "responses": {
+          "404": {
+            "description": "Book not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/SuccessResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update an existing book",
+        "operationId": "update_book",
+        "tags": [
+          "books"
+        ],
+        "responses": {
+          "404": {
+            "description": "Book not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/definitions/BookInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/borrows": {
+      "get": {
+        "summary": "Get all borrow records with search, filtering, and pagination",
+        "operationId": "get_borrow_records",
+        "tags": [
+          "borrows"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by status (borrowed, returned, overdue)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "borrowed",
+                "returned",
+                "overdue"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Search by borrower name or email",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Items per page (5, 10, 15)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                5,
+                10,
+                15
+              ],
+              "default": 10
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (default: 1)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Borrow a book",
+        "operationId": "borrow_book",
+        "tags": [
+          "borrows"
+        ],
+        "responses": {
+          "400": {
+            "description": "Validation Error or Book not available",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/definitions/BorrowInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/borrows/overdue": {
+      "get": {
+        "summary": "Get all overdue borrow records",
+        "operationId": "get_overdue_books",
+        "tags": [
+          "borrows"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/SuccessResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/borrows/{record_id}": {
+      "get": {
+        "summary": "Get a specific borrow record",
+        "operationId": "get_borrow_record",
+        "tags": [
+          "borrows"
+        ],
+        "responses": {
+          "404": {
+            "description": "Borrow record not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/SuccessResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/borrows/{record_id}/extend": {
+      "post": {
+        "summary": "Extend the due date of a borrowed book",
+        "operationId": "extend_due_date",
+        "tags": [
+          "borrows"
+        ],
+        "responses": {
+          "404": {
+            "description": "Borrow record not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or book already returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/SuccessResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/definitions/ExtendInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/borrows/{record_id}/return": {
+      "post": {
+        "summary": "Return a borrowed book",
+        "operationId": "return_book",
+        "tags": [
+          "borrows"
+        ],
+        "responses": {
+          "404": {
+            "description": "Borrow record not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Book already returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/SuccessResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Login with username and password - returns access & refresh tokens",
+        "operationId": "user_login",
+        "tags": [
+          "auth"
+        ],
+        "responses": {
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/TokenResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/definitions/Login"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "Logout (revoke refresh token and clear cookie)",
+        "operationId": "user_logout",
+        "tags": [
+          "auth"
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "200": {
+            "description": "Logged out successfully"
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ]
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "summary": "Get current user information",
+        "operationId": "get_current_user",
+        "tags": [
+          "auth"
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "200": {
+            "description": "Success"
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ]
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "summary": "Refresh access token using refresh token",
+        "operationId": "refresh_token",
+        "tags": [
+          "auth"
+        ],
+        "responses": {
+          "401": {
+            "description": "Invalid refresh token"
+          },
+          "200": {
+            "description": "Token refreshed successfully"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/definitions/RefreshToken"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "summary": "Register a new user - returns access & refresh tokens",
+        "operationId": "user_register",
+        "tags": [
+          "auth"
+        ],
+        "responses": {
+          "400": {
+            "description": "Validation error"
+          },
+          "201": {
+            "description": "User created successfully"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/definitions/Register"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/verify": {
+      "get": {
+        "summary": "Verify if token is valid",
+        "operationId": "verify_token",
+        "tags": [
+          "auth"
+        ],
+        "responses": {
+          "401": {
+            "description": "Token is invalid"
+          },
+          "200": {
+            "description": "Token is valid"
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Login": {
+        "required": [
+          "password",
+          "username"
+        ],
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Username",
+            "example": "admin"
+          },
+          "password": {
+            "type": "string",
+            "description": "Password",
+            "example": "password123"
+          }
+        },
+        "type": "object"
+      },
+      "TokenResponse": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "JWT Token"
+          },
+          "user": {
+            "type": "object",
+            "description": "User information"
+          }
+        },
+        "type": "object"
+      },
+      "Register": {
+        "required": [
+          "email",
+          "password",
+          "username"
+        ],
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Username",
+            "example": "johndoe"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email",
+            "example": "john@example.com"
+          },
+          "password": {
+            "type": "string",
+            "description": "Password",
+            "example": "password123"
+          },
+          "full_name": {
+            "type": "string",
+            "description": "Full Name",
+            "example": "John Doe"
+          }
+        },
+        "type": "object"
+      },
+      "RefreshToken": {
+        "required": [
+          "refresh_token"
+        ],
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "description": "Refresh Token"
+          }
+        },
+        "type": "object"
+      },
+      "BookInput": {
+        "required": [
+          "author",
+          "isbn",
+          "title"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Book title",
+            "maxLength": 100
+          },
+          "author": {
+            "type": "string",
+            "description": "Book author",
+            "maxLength": 100
+          },
+          "isbn": {
+            "type": "string",
+            "description": "ISBN number",
+            "maxLength": 13
+          }
+        },
+        "type": "object"
+      },
+      "SuccessResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Operation success status"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "data": {
+            "type": "object",
+            "description": "Response data"
+          }
+        },
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Operation success status"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "data": {
+            "type": "object",
+            "description": "Error details"
+          }
+        },
+        "type": "object"
+      },
+      "BorrowInput": {
+        "required": [
+          "book_id",
+          "borrower_email",
+          "borrower_name"
+        ],
+        "properties": {
+          "book_id": {
+            "type": "integer",
+            "description": "Book ID to borrow"
+          },
+          "borrower_name": {
+            "type": "string",
+            "description": "Borrower name",
+            "maxLength": 100
+          },
+          "borrower_email": {
+            "type": "string",
+            "description": "Borrower email",
+            "maxLength": 100
+          },
+          "days": {
+            "type": "integer",
+            "description": "Borrowing period in days",
+            "default": 14,
+            "minimum": 1,
+            "maximum": 90
+          }
+        },
+        "type": "object"
+      },
+      "ExtendInput": {
+        "required": [
+          "additional_days"
+        ],
+        "properties": {
+          "additional_days": {
+            "type": "integer",
+            "description": "Additional days to extend",
+            "minimum": 1,
+            "maximum": 30
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "apikey": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token format: Bearer <token>"
+      }
+    }
+  }
+}
