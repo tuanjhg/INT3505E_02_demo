@@ -7,7 +7,7 @@
     <h2 style="text-align: center; margin-bottom: 30px;">Login</h2>
     
     <!-- Server-side form for session-based auth -->
-    <form method="POST" action="{{ url_for('web.login') }}">
+    <form id="login-form" method="POST" action="{{ url_for('web.login') }}">
         <div class="form-group">
             <label for="username">Username</label>
             <input type="text" id="username" name="username" required autocomplete="username">
@@ -32,4 +32,65 @@
         </div>
     </form>
 </div>
+
+<script>
+// On submit, call API login to get JWT tokens, then call server login to create session
+document.getElementById('login-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+    try {
+        // Step 1: Call API login to get JWT tokens and set HttpOnly cookie
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',  // Important: allows server to set HttpOnly cookie
+            body: JSON.stringify({ username, password })
+        });
+
+        const json = await res.json();
+        if (!res.ok) {
+            alert(json.message || 'Login failed');
+            return;
+        }
+
+        const data = json.data || json;
+
+        // Step 2: Store JWT tokens in localStorage and sessionStorage
+        if (data.access_token) {
+            localStorage.setItem('access_token', data.access_token);
+            sessionStorage.setItem('access_token', data.access_token);
+        }
+        
+        if (data.refresh_token) {
+            localStorage.setItem('refresh_token', data.refresh_token);
+            sessionStorage.setItem('refresh_token', data.refresh_token);
+        }
+        
+        console.log('Tokens stored successfully in localStorage and sessionStorage');
+        console.log('HttpOnly cookie set by server');
+
+        // Step 3: Submit form to server to create Flask session
+        // This allows the @login_required decorator to work on web routes
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('password', password);
+        
+        const sessionRes = await fetch('/login', {
+            method: 'POST',
+            body: formData,
+            redirect: 'manual'  // Don't auto-follow redirect
+        });
+        
+        // Redirect after both API and session login succeed
+        window.location.href = '/';
+
+    } catch (err) {
+        console.error('Login error', err);
+        alert('Network error during login');
+    }
+});
+</script>
+
 {% endblock %}

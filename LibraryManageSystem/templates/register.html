@@ -7,7 +7,7 @@
     <h2 style="text-align: center; margin-bottom: 30px;">Register</h2>
     
     <!-- Server-side form for session-based auth -->
-    <form method="POST" action="{{ url_for('web.register') }}" onsubmit="return validatePassword()">
+    <form id="register-form" method="POST" action="{{ url_for('web.register') }}" onsubmit="return validatePassword()">
         <div class="form-group">
             <label for="username">Username *</label>
             <input type="text" id="username" name="username" required autocomplete="username">
@@ -61,5 +61,66 @@ function validatePassword() {
     errorDiv.style.display = 'none';
     return true;
 }
+
+// On submit, call API register to get JWT tokens, then call server register to create session
+document.getElementById('register-form').addEventListener('submit', async function(e) {
+    if (!validatePassword()) { e.preventDefault(); return; }
+    e.preventDefault();
+    const username = document.getElementById('username').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const full_name = document.getElementById('full_name').value;
+
+    try {
+        // Step 1: Call API register to get JWT tokens and set HttpOnly cookie
+        const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',  // Important: allows server to set HttpOnly cookie
+            body: JSON.stringify({ username, email, password, full_name })
+        });
+
+        const json = await res.json();
+        if (!res.ok) {
+            alert(json.message || 'Registration failed');
+            return;
+        }
+
+        const data = json.data || json;
+
+        // Step 2: Store JWT tokens in localStorage and sessionStorage
+        if (data.access_token) {
+            localStorage.setItem('access_token', data.access_token);
+            sessionStorage.setItem('access_token', data.access_token);
+        }
+        
+        if (data.refresh_token) {
+            localStorage.setItem('refresh_token', data.refresh_token);
+            sessionStorage.setItem('refresh_token', data.refresh_token);
+        }
+        
+        console.log('Tokens stored successfully in localStorage and sessionStorage');
+        console.log('HttpOnly cookie set by server');
+
+        // Step 3: Submit form to server to create Flask session
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('email', email);
+        formData.append('password', password);
+        formData.append('full_name', full_name);
+        
+        const sessionRes = await fetch('/register', {
+            method: 'POST',
+            body: formData,
+            redirect: 'manual'
+        });
+        
+        // Redirect after both API and session registration succeed
+        window.location.href = '/';
+    } catch (err) {
+        console.error('Registration error', err);
+        alert('Network error during registration');
+    }
+});
 </script>
 {% endblock %}

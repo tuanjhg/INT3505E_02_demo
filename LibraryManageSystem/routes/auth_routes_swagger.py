@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, make_response
 from flask_restx import Namespace, Resource, fields
 from services.auth_service import AuthService
 from utils.response_helpers import success_response, error_response
@@ -73,7 +73,8 @@ class Login(Resource):
         access_token = AuthService.generate_access_token(user)
         refresh_token = AuthService.generate_refresh_token(user)
         
-        return success_response(
+        # Create response with tokens
+        response_data, status_code = success_response(
             data={
                 'access_token': access_token,
                 'refresh_token': refresh_token,
@@ -83,6 +84,18 @@ class Login(Resource):
             },
             message='Login successful'
         )
+        
+        # Set HttpOnly cookie for refresh token
+        resp = make_response(response_data, status_code)
+        resp.set_cookie(
+            'refresh_token',
+            refresh_token,
+            httponly=True,
+            secure=False,  # Set to True in production with HTTPS
+            samesite='Lax',
+            max_age=30*24*60*60  # 30 days
+        )
+        return resp
 
 @auth_ns.route('/register')
 class Register(Resource):
@@ -116,7 +129,8 @@ class Register(Resource):
         access_token = AuthService.generate_access_token(user)
         refresh_token = AuthService.generate_refresh_token(user)
         
-        return success_response(
+        # Create response with tokens
+        response_data, status_code = success_response(
             data={
                 'access_token': access_token,
                 'refresh_token': refresh_token,
@@ -127,6 +141,18 @@ class Register(Resource):
             message='User registered successfully',
             status_code=201
         )
+        
+        # Set HttpOnly cookie for refresh token
+        resp = make_response(response_data, status_code)
+        resp.set_cookie(
+            'refresh_token',
+            refresh_token,
+            httponly=True,
+            secure=False,  # Set to True in production with HTTPS
+            samesite='Lax',
+            max_age=30*24*60*60  # 30 days
+        )
+        return resp
 
 @auth_ns.route('/me')
 class CurrentUser(Resource):
@@ -153,13 +179,18 @@ class Logout(Resource):
     @auth_ns.response(401, 'Unauthorized')
     @token_required
     def post(self, payload):
-        """Logout (revoke refresh token)"""
+        """Logout (revoke refresh token and clear cookie)"""
         user = AuthService.get_user_by_id(payload['user_id'])
         if user:
             AuthService.revoke_refresh_token(user)
-        return success_response(
+        
+        # Create response and clear the HttpOnly cookie
+        response_data, status_code = success_response(
             message='Logged out successfully'
         )
+        resp = make_response(response_data, status_code)
+        resp.set_cookie('refresh_token', '', expires=0, httponly=True, samesite='Lax')
+        return resp
 
 @auth_ns.route('/verify')
 class VerifyToken(Resource):

@@ -314,7 +314,7 @@
                 {% if session.get('is_admin') %}
                 <span style="background: #ffc107; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 11px;">ADMIN</span>
                 {% endif %}
-                <a href="{{ url_for('web.logout') }}" class="btn btn-secondary" style="margin: 0; padding: 5px 10px;">Logout</a>
+                <a href="{{ url_for('web.logout') }}" id="logout-btn" class="btn btn-secondary" style="margin: 0; padding: 5px 10px;">Logout</a>
             </div>
             {% else %}
             <div class="auth-links show">
@@ -336,5 +336,47 @@
 
         {% block content %}{% endblock %}
     </div>
+
+    <script>
+    // Clear all token storage on logout
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            // Get access token for API logout call
+            const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+            
+            // Call API logout to revoke refresh token and clear HttpOnly cookie
+            if (accessToken) {
+                try {
+                    await fetch('/api/auth/logout', {
+                        method: 'POST',
+                        credentials: 'include',  // Send HttpOnly cookie
+                        headers: {
+                            'Authorization': 'Bearer ' + accessToken,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                } catch (err) {
+                    console.warn('Logout API call failed:', err);
+                }
+            }
+            
+            // Clear localStorage
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            
+            // Clear sessionStorage
+            sessionStorage.removeItem('access_token');
+            sessionStorage.removeItem('refresh_token');
+            
+            console.log('All tokens cleared (localStorage, sessionStorage, and HttpOnly cookie)');
+            
+            // Redirect to server logout to clear session
+            window.location.href = '{{ url_for("web.logout") }}';
+        });
+    }
+    </script>
 </body>
 </html>

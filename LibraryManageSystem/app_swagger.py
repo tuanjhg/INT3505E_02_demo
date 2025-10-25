@@ -67,6 +67,12 @@ def create_app(config=None):
     from routes.web_routes import web_bp
     app.register_blueprint(web_bp)
     
+    # Suppress Chrome DevTools 404 log noise
+    @app.route('/.well-known/appspecific/com.chrome.devtools.json')
+    def chrome_devtools():
+        """Silent handler for Chrome DevTools probe - returns 204 No Content"""
+        return '', 204
+    
     # Register error handlers
     register_error_handlers(app, api)
     
