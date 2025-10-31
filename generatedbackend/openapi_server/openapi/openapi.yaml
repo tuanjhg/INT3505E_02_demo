@@ -1,0 +1,1445 @@
+openapi: 3.0.3
+info:
+  contact:
+    email: support@library.example.com
+    name: Library Management System
+  description: |
+    A comprehensive library management system API with authentication, book management, and borrowing features.
+
+    ## Features
+    - JWT Authentication with access & refresh tokens
+    - HttpOnly Cookie support for enhanced security
+    - Book CRUD operations with search and pagination
+    - Borrowing system with due dates and extensions
+    - Overdue tracking
+
+    ## Authentication
+    Most endpoints require JWT authentication. Include the access token in the Authorization header:
+    ```
+    Authorization: Bearer <access_token>
+    ```
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Library Management API
+  version: 1.0.0
+servers:
+- description: Local development server
+  url: http://localhost:5000/api
+- description: Production server
+  url: https://api.library.example.com/api
+security:
+- BearerAuth: []
+tags:
+- description: Authentication and user management
+  name: auth
+- description: Book management operations
+  name: books
+- description: Book borrowing operations
+  name: borrows
+paths:
+  /auth/login:
+    post:
+      description: |
+        Authenticate user with username and password.
+        Returns JWT access token, refresh token, and sets HttpOnly cookie.
+
+        **Storage locations:**
+        - Access token: localStorage, sessionStorage
+        - Refresh token: localStorage, sessionStorage, HttpOnly cookie
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+          description: Login successful
+          headers:
+            Set-Cookie:
+              description: HttpOnly cookie with refresh token
+              explode: false
+              schema:
+                example: refresh_token=eyJ...; HttpOnly; SameSite=Lax; Max-Age=2592000
+                type: string
+              style: simple
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Bad request - missing credentials
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Invalid credentials
+      security: []
+      summary: User login
+      tags:
+      - auth
+      x-openapi-router-controller: openapi_server.controllers.auth_controller
+  /auth/logout:
+    post:
+      description: Revoke refresh token and clear HttpOnly cookie
+      operationId: logout
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+          description: Logged out successfully
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized - invalid or missing token
+      summary: User logout
+      tags:
+      - auth
+      x-openapi-router-controller: openapi_server.controllers.auth_controller
+  /auth/me:
+    get:
+      description: Retrieve information about the authenticated user
+      operationId: get_current_user
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getCurrentUser_200_response"
+          description: User information retrieved successfully
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: User not found
+      summary: Get current user information
+      tags:
+      - auth
+      x-openapi-router-controller: openapi_server.controllers.auth_controller
+  /auth/refresh:
+    post:
+      description: Obtain a new access token using a valid refresh token
+      operationId: refresh_token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/refreshToken_200_response"
+          description: Access token refreshed successfully
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Refresh token is required
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Invalid or expired refresh token
+      security: []
+      summary: Refresh access token
+      tags:
+      - auth
+      x-openapi-router-controller: openapi_server.controllers.auth_controller
+  /auth/register:
+    post:
+      description: Create a new user account and return authentication tokens
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+          description: User registered successfully
+          headers:
+            Set-Cookie:
+              description: HttpOnly cookie with refresh token
+              explode: false
+              schema:
+                type: string
+              style: simple
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Validation error or user already exists
+      security: []
+      summary: Register new user
+      tags:
+      - auth
+      x-openapi-router-controller: openapi_server.controllers.auth_controller
+  /auth/verify:
+    get:
+      description: Check if the provided JWT token is valid
+      operationId: verify_token
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/verifyToken_200_response"
+          description: Token is valid
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Token is invalid or expired
+      summary: Verify token validity
+      tags:
+      - auth
+      x-openapi-router-controller: openapi_server.controllers.auth_controller
+  /books:
+    get:
+      description: Retrieve a paginated list of books with optional search and filtering
+      operationId: get_books
+      parameters:
+      - description: Page number
+        explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          minimum: 1
+          type: integer
+        style: form
+      - description: Items per page
+        explode: true
+        in: query
+        name: per_page
+        required: false
+        schema:
+          default: 10
+          enum:
+          - 5
+          - 10
+          - 15
+          type: integer
+        style: form
+      - description: Search query for title or author
+        explode: true
+        in: query
+        name: search
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Show only available books
+        explode: true
+        in: query
+        name: available_only
+        required: false
+        schema:
+          default: false
+          type: boolean
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookListResponse"
+          description: Books retrieved successfully
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Invalid pagination parameters
+      security: []
+      summary: Get all books
+      tags:
+      - books
+      x-openapi-router-controller: openapi_server.controllers.books_controller
+    post:
+      description: Add a new book to the library
+      operationId: create_book
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookInput"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/createBook_201_response"
+          description: Book created successfully
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Validation error or duplicate ISBN
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+      summary: Create a new book
+      tags:
+      - books
+      x-openapi-router-controller: openapi_server.controllers.books_controller
+  /books/{book_id}:
+    delete:
+      description: Delete a book from the library
+      operationId: delete_book
+      parameters:
+      - description: Book ID
+        explode: false
+        in: path
+        name: book_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+          description: Book deleted successfully
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Book is currently borrowed
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Book not found
+      summary: Delete book
+      tags:
+      - books
+      x-openapi-router-controller: openapi_server.controllers.books_controller
+    get:
+      description: Retrieve details of a specific book
+      operationId: get_book_by_id
+      parameters:
+      - description: Book ID
+        explode: false
+        in: path
+        name: book_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/createBook_201_response"
+          description: Book found
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Book not found
+      security: []
+      summary: Get book by ID
+      tags:
+      - books
+      x-openapi-router-controller: openapi_server.controllers.books_controller
+    put:
+      description: Update an existing book's information
+      operationId: update_book
+      parameters:
+      - description: Book ID
+        explode: false
+        in: path
+        name: book_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookInput"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/createBook_201_response"
+          description: Book updated successfully
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Validation error
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Book not found
+      summary: Update book
+      tags:
+      - books
+      x-openapi-router-controller: openapi_server.controllers.books_controller
+  /borrows:
+    get:
+      description: Retrieve a paginated list of borrow records with optional filtering
+      operationId: get_borrows
+      parameters:
+      - description: Page number
+        explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          type: integer
+        style: form
+      - description: Items per page
+        explode: true
+        in: query
+        name: per_page
+        required: false
+        schema:
+          default: 10
+          enum:
+          - 5
+          - 10
+          - 15
+          type: integer
+        style: form
+      - description: Filter by return status
+        explode: true
+        in: query
+        name: returned
+        required: false
+        schema:
+          type: boolean
+        style: form
+      - description: Show only overdue records
+        explode: true
+        in: query
+        name: overdue_only
+        required: false
+        schema:
+          default: false
+          type: boolean
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getBorrows_200_response"
+          description: Borrow records retrieved successfully
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+      summary: Get all borrow records
+      tags:
+      - borrows
+      x-openapi-router-controller: openapi_server.controllers.borrows_controller
+    post:
+      description: Create a new borrow record for a book
+      operationId: borrow_book
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BorrowInput"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/borrowBook_201_response"
+          description: Book borrowed successfully
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Validation error or book not available
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Book not found
+      summary: Borrow a book
+      tags:
+      - borrows
+      x-openapi-router-controller: openapi_server.controllers.borrows_controller
+  /borrows/{borrow_id}:
+    get:
+      description: Retrieve details of a specific borrow record
+      operationId: get_borrow_by_id
+      parameters:
+      - description: Borrow record ID
+        explode: false
+        in: path
+        name: borrow_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/borrowBook_201_response"
+          description: Borrow record found
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Borrow record not found
+      summary: Get borrow record by ID
+      tags:
+      - borrows
+      x-openapi-router-controller: openapi_server.controllers.borrows_controller
+  /borrows/{borrow_id}/extend:
+    post:
+      description: Extend the due date of a borrowed book
+      operationId: extend_borrow
+      parameters:
+      - description: Borrow record ID
+        explode: false
+        in: path
+        name: borrow_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExtendInput"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/borrowBook_201_response"
+          description: Borrow period extended successfully
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Book already returned or validation error
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Borrow record not found
+      summary: Extend borrowing period
+      tags:
+      - borrows
+      x-openapi-router-controller: openapi_server.controllers.borrows_controller
+  /borrows/{borrow_id}/return:
+    post:
+      description: Mark a borrow record as returned
+      operationId: return_book
+      parameters:
+      - description: Borrow record ID
+        explode: false
+        in: path
+        name: borrow_id
+        required: true
+        schema:
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/borrowBook_201_response"
+          description: Book returned successfully
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Book already returned
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Borrow record not found
+      summary: Return a borrowed book
+      tags:
+      - borrows
+      x-openapi-router-controller: openapi_server.controllers.borrows_controller
+components:
+  schemas:
+    LoginRequest:
+      example:
+        password: admin123
+        username: admin
+      properties:
+        username:
+          description: Username for authentication
+          example: admin
+          title: username
+          type: string
+        password:
+          description: User password
+          example: admin123
+          format: password
+          title: password
+          type: string
+      required:
+      - password
+      - username
+      title: LoginRequest
+      type: object
+    RegisterRequest:
+      example:
+        password: password123
+        full_name: John Doe
+        email: john@example.com
+        username: johndoe
+      properties:
+        username:
+          description: Unique username
+          example: johndoe
+          maxLength: 50
+          minLength: 3
+          title: username
+          type: string
+        email:
+          description: User email address
+          example: john@example.com
+          format: email
+          title: email
+          type: string
+        password:
+          description: User password (minimum 6 characters)
+          example: password123
+          format: password
+          minLength: 6
+          title: password
+          type: string
+        full_name:
+          description: Full name of the user
+          example: John Doe
+          maxLength: 100
+          title: full_name
+          type: string
+      required:
+      - email
+      - password
+      - username
+      title: RegisterRequest
+      type: object
+    TokenResponse:
+      example:
+        data:
+          access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          token_type: Bearer
+          expires_in: 900
+          user:
+            is_admin: true
+            full_name: Admin User
+            is_active: true
+            last_login: 2025-10-25T08:30:00Z
+            created_at: 2025-01-01T00:00:00Z
+            id: 1
+            email: admin@library.com
+            username: admin
+        success: true
+        message: Login successful
+      properties:
+        success:
+          example: true
+          title: success
+          type: boolean
+        message:
+          example: Login successful
+          title: message
+          type: string
+        data:
+          $ref: "#/components/schemas/TokenResponse_data"
+      title: TokenResponse
+      type: object
+    User:
+      example:
+        is_admin: true
+        full_name: Admin User
+        is_active: true
+        last_login: 2025-10-25T08:30:00Z
+        created_at: 2025-01-01T00:00:00Z
+        id: 1
+        email: admin@library.com
+        username: admin
+      properties:
+        id:
+          example: 1
+          title: id
+          type: integer
+        username:
+          example: admin
+          title: username
+          type: string
+        email:
+          example: admin@library.com
+          format: email
+          title: email
+          type: string
+        full_name:
+          example: Admin User
+          title: full_name
+          type: string
+        is_admin:
+          example: true
+          title: is_admin
+          type: boolean
+        is_active:
+          example: true
+          title: is_active
+          type: boolean
+        created_at:
+          example: 2025-01-01T00:00:00Z
+          format: date-time
+          title: created_at
+          type: string
+        last_login:
+          example: 2025-10-25T08:30:00Z
+          format: date-time
+          title: last_login
+          type: string
+      title: User
+      type: object
+    RefreshTokenRequest:
+      example:
+        refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      properties:
+        refresh_token:
+          description: Refresh token to obtain new access token
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          title: refresh_token
+          type: string
+      required:
+      - refresh_token
+      title: RefreshTokenRequest
+      type: object
+    Book:
+      example:
+        author: F. Scott Fitzgerald
+        isbn: "9780743273565"
+        available: true
+        created_at: 2025-01-01T00:00:00Z
+        id: 1
+        title: The Great Gatsby
+      properties:
+        id:
+          example: 1
+          readOnly: true
+          title: id
+          type: integer
+        title:
+          description: Book title
+          example: The Great Gatsby
+          maxLength: 100
+          title: title
+          type: string
+        author:
+          description: Book author
+          example: F. Scott Fitzgerald
+          maxLength: 100
+          title: author
+          type: string
+        isbn:
+          description: ISBN number
+          example: "9780743273565"
+          maxLength: 13
+          title: isbn
+          type: string
+        available:
+          description: Availability status
+          example: true
+          readOnly: true
+          title: available
+          type: boolean
+        created_at:
+          example: 2025-01-01T00:00:00Z
+          format: date-time
+          readOnly: true
+          title: created_at
+          type: string
+      title: Book
+      type: object
+    BookInput:
+      example:
+        author: F. Scott Fitzgerald
+        isbn: "9780743273565"
+        title: The Great Gatsby
+      properties:
+        title:
+          example: The Great Gatsby
+          maxLength: 100
+          title: title
+          type: string
+        author:
+          example: F. Scott Fitzgerald
+          maxLength: 100
+          title: author
+          type: string
+        isbn:
+          example: "9780743273565"
+          maxLength: 13
+          title: isbn
+          type: string
+      required:
+      - author
+      - isbn
+      - title
+      title: BookInput
+      type: object
+    BookListResponse:
+      example:
+        data:
+          books:
+          - author: F. Scott Fitzgerald
+            isbn: "9780743273565"
+            available: true
+            created_at: 2025-01-01T00:00:00Z
+            id: 1
+            title: The Great Gatsby
+          - author: F. Scott Fitzgerald
+            isbn: "9780743273565"
+            available: true
+            created_at: 2025-01-01T00:00:00Z
+            id: 1
+            title: The Great Gatsby
+          pagination:
+            next_page: 2
+            per_page: 10
+            has_next: true
+            total_pages: 5
+            has_prev: false
+            total_items: 50
+            prev_page: 0
+            current_page: 1
+        success: true
+        message: Books retrieved successfully
+      properties:
+        success:
+          example: true
+          title: success
+          type: boolean
+        message:
+          example: Books retrieved successfully
+          title: message
+          type: string
+        data:
+          $ref: "#/components/schemas/BookListResponse_data"
+      title: BookListResponse
+      type: object
+    BorrowRecord:
+      example:
+        borrower_email: john@example.com
+        book:
+          author: F. Scott Fitzgerald
+          isbn: "9780743273565"
+          available: true
+          created_at: 2025-01-01T00:00:00Z
+          id: 1
+          title: The Great Gatsby
+        borrower_name: John Doe
+        due_date: 2025-10-15T10:00:00Z
+        borrow_date: 2025-10-01T10:00:00Z
+        is_overdue: false
+        id: 1
+        book_id: 1
+        returned: false
+        return_date: 2025-10-14T15:30:00Z
+      properties:
+        id:
+          example: 1
+          readOnly: true
+          title: id
+          type: integer
+        book_id:
+          example: 1
+          title: book_id
+          type: integer
+        book:
+          $ref: "#/components/schemas/Book"
+        borrower_name:
+          example: John Doe
+          title: borrower_name
+          type: string
+        borrower_email:
+          example: john@example.com
+          format: email
+          title: borrower_email
+          type: string
+        borrow_date:
+          example: 2025-10-01T10:00:00Z
+          format: date-time
+          title: borrow_date
+          type: string
+        due_date:
+          example: 2025-10-15T10:00:00Z
+          format: date-time
+          title: due_date
+          type: string
+        return_date:
+          example: 2025-10-14T15:30:00Z
+          format: date-time
+          nullable: true
+          title: return_date
+          type: string
+        returned:
+          example: false
+          title: returned
+          type: boolean
+        is_overdue:
+          example: false
+          title: is_overdue
+          type: boolean
+      title: BorrowRecord
+      type: object
+    BorrowInput:
+      example:
+        borrower_email: john@example.com
+        borrower_name: John Doe
+        days: 14
+        book_id: 1
+      properties:
+        book_id:
+          description: ID of the book to borrow
+          example: 1
+          title: book_id
+          type: integer
+        borrower_name:
+          example: John Doe
+          maxLength: 100
+          title: borrower_name
+          type: string
+        borrower_email:
+          example: john@example.com
+          format: email
+          maxLength: 100
+          title: borrower_email
+          type: string
+        days:
+          default: 14
+          description: Borrowing period in days
+          example: 14
+          maximum: 90
+          minimum: 1
+          title: days
+          type: integer
+      required:
+      - book_id
+      - borrower_email
+      - borrower_name
+      title: BorrowInput
+      type: object
+    ExtendInput:
+      example:
+        additional_days: 7
+      properties:
+        additional_days:
+          description: Additional days to extend the due date
+          example: 7
+          maximum: 30
+          minimum: 1
+          title: additional_days
+          type: integer
+      required:
+      - additional_days
+      title: ExtendInput
+      type: object
+    Pagination:
+      example:
+        next_page: 2
+        per_page: 10
+        has_next: true
+        total_pages: 5
+        has_prev: false
+        total_items: 50
+        prev_page: 0
+        current_page: 1
+      properties:
+        current_page:
+          example: 1
+          title: current_page
+          type: integer
+        per_page:
+          example: 10
+          title: per_page
+          type: integer
+        total_items:
+          example: 50
+          title: total_items
+          type: integer
+        total_pages:
+          example: 5
+          title: total_pages
+          type: integer
+        has_next:
+          example: true
+          title: has_next
+          type: boolean
+        has_prev:
+          example: false
+          title: has_prev
+          type: boolean
+        next_page:
+          example: 2
+          nullable: true
+          title: next_page
+          type: integer
+        prev_page:
+          nullable: true
+          title: prev_page
+          type: integer
+          example: null
+      title: Pagination
+      type: object
+    SuccessResponse:
+      example:
+        data:
+          key: ""
+        success: true
+        message: Operation successful
+      properties:
+        success:
+          example: true
+          title: success
+          type: boolean
+        message:
+          example: Operation successful
+          title: message
+          type: string
+        data:
+          additionalProperties: true
+          title: data
+          type: object
+      title: SuccessResponse
+      type: object
+    ErrorResponse:
+      example:
+        data:
+          key: ""
+        success: false
+        message: An error occurred
+      properties:
+        success:
+          example: false
+          title: success
+          type: boolean
+        message:
+          example: An error occurred
+          title: message
+          type: string
+        data:
+          additionalProperties: true
+          nullable: true
+          title: data
+          type: object
+      title: ErrorResponse
+      type: object
+    getCurrentUser_200_response:
+      allOf:
+      - $ref: "#/components/schemas/SuccessResponse"
+      - properties:
+          data:
+            $ref: "#/components/schemas/User"
+        type: object
+      example:
+        data:
+          is_admin: true
+          full_name: Admin User
+          is_active: true
+          last_login: 2025-10-25T08:30:00Z
+          created_at: 2025-01-01T00:00:00Z
+          id: 1
+          email: admin@library.com
+          username: admin
+        success: true
+        message: Operation successful
+      title: getCurrentUser_200_response
+    verifyToken_200_response_allOf_data:
+      example:
+        valid: true
+        user_id: 1
+      properties:
+        valid:
+          example: true
+          title: valid
+          type: boolean
+        user_id:
+          example: 1
+          title: user_id
+          type: integer
+      title: verifyToken_200_response_allOf_data
+      type: object
+    verifyToken_200_response:
+      allOf:
+      - $ref: "#/components/schemas/SuccessResponse"
+      - properties:
+          data:
+            $ref: "#/components/schemas/verifyToken_200_response_allOf_data"
+        type: object
+      example:
+        data:
+          valid: true
+          user_id: 1
+        success: true
+        message: Operation successful
+      title: verifyToken_200_response
+    refreshToken_200_response_allOf_data:
+      example:
+        access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      properties:
+        access_token:
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          title: access_token
+          type: string
+      title: refreshToken_200_response_allOf_data
+      type: object
+    refreshToken_200_response:
+      allOf:
+      - $ref: "#/components/schemas/SuccessResponse"
+      - properties:
+          data:
+            $ref: "#/components/schemas/refreshToken_200_response_allOf_data"
+        type: object
+      example:
+        data:
+          access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        success: true
+        message: Operation successful
+      title: refreshToken_200_response
+    createBook_201_response:
+      allOf:
+      - $ref: "#/components/schemas/SuccessResponse"
+      - properties:
+          data:
+            $ref: "#/components/schemas/Book"
+        type: object
+      example:
+        data:
+          author: F. Scott Fitzgerald
+          isbn: "9780743273565"
+          available: true
+          created_at: 2025-01-01T00:00:00Z
+          id: 1
+          title: The Great Gatsby
+        success: true
+        message: Operation successful
+      title: createBook_201_response
+    getBorrows_200_response_allOf_data:
+      example:
+        pagination:
+          next_page: 2
+          per_page: 10
+          has_next: true
+          total_pages: 5
+          has_prev: false
+          total_items: 50
+          prev_page: 0
+          current_page: 1
+        borrows:
+        - borrower_email: john@example.com
+          book:
+            author: F. Scott Fitzgerald
+            isbn: "9780743273565"
+            available: true
+            created_at: 2025-01-01T00:00:00Z
+            id: 1
+            title: The Great Gatsby
+          borrower_name: John Doe
+          due_date: 2025-10-15T10:00:00Z
+          borrow_date: 2025-10-01T10:00:00Z
+          is_overdue: false
+          id: 1
+          book_id: 1
+          returned: false
+          return_date: 2025-10-14T15:30:00Z
+        - borrower_email: john@example.com
+          book:
+            author: F. Scott Fitzgerald
+            isbn: "9780743273565"
+            available: true
+            created_at: 2025-01-01T00:00:00Z
+            id: 1
+            title: The Great Gatsby
+          borrower_name: John Doe
+          due_date: 2025-10-15T10:00:00Z
+          borrow_date: 2025-10-01T10:00:00Z
+          is_overdue: false
+          id: 1
+          book_id: 1
+          returned: false
+          return_date: 2025-10-14T15:30:00Z
+      properties:
+        borrows:
+          items:
+            $ref: "#/components/schemas/BorrowRecord"
+          title: borrows
+          type: array
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      title: getBorrows_200_response_allOf_data
+      type: object
+    getBorrows_200_response:
+      allOf:
+      - $ref: "#/components/schemas/SuccessResponse"
+      - properties:
+          data:
+            $ref: "#/components/schemas/getBorrows_200_response_allOf_data"
+        type: object
+      example:
+        data:
+          pagination:
+            next_page: 2
+            per_page: 10
+            has_next: true
+            total_pages: 5
+            has_prev: false
+            total_items: 50
+            prev_page: 0
+            current_page: 1
+          borrows:
+          - borrower_email: john@example.com
+            book:
+              author: F. Scott Fitzgerald
+              isbn: "9780743273565"
+              available: true
+              created_at: 2025-01-01T00:00:00Z
+              id: 1
+              title: The Great Gatsby
+            borrower_name: John Doe
+            due_date: 2025-10-15T10:00:00Z
+            borrow_date: 2025-10-01T10:00:00Z
+            is_overdue: false
+            id: 1
+            book_id: 1
+            returned: false
+            return_date: 2025-10-14T15:30:00Z
+          - borrower_email: john@example.com
+            book:
+              author: F. Scott Fitzgerald
+              isbn: "9780743273565"
+              available: true
+              created_at: 2025-01-01T00:00:00Z
+              id: 1
+              title: The Great Gatsby
+            borrower_name: John Doe
+            due_date: 2025-10-15T10:00:00Z
+            borrow_date: 2025-10-01T10:00:00Z
+            is_overdue: false
+            id: 1
+            book_id: 1
+            returned: false
+            return_date: 2025-10-14T15:30:00Z
+        success: true
+        message: Operation successful
+      title: getBorrows_200_response
+    borrowBook_201_response:
+      allOf:
+      - $ref: "#/components/schemas/SuccessResponse"
+      - properties:
+          data:
+            $ref: "#/components/schemas/BorrowRecord"
+        type: object
+      example:
+        data:
+          borrower_email: john@example.com
+          book:
+            author: F. Scott Fitzgerald
+            isbn: "9780743273565"
+            available: true
+            created_at: 2025-01-01T00:00:00Z
+            id: 1
+            title: The Great Gatsby
+          borrower_name: John Doe
+          due_date: 2025-10-15T10:00:00Z
+          borrow_date: 2025-10-01T10:00:00Z
+          is_overdue: false
+          id: 1
+          book_id: 1
+          returned: false
+          return_date: 2025-10-14T15:30:00Z
+        success: true
+        message: Operation successful
+      title: borrowBook_201_response
+    TokenResponse_data:
+      example:
+        access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        token_type: Bearer
+        expires_in: 900
+        user:
+          is_admin: true
+          full_name: Admin User
+          is_active: true
+          last_login: 2025-10-25T08:30:00Z
+          created_at: 2025-01-01T00:00:00Z
+          id: 1
+          email: admin@library.com
+          username: admin
+      properties:
+        access_token:
+          description: JWT access token (expires in 15 minutes)
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          title: access_token
+          type: string
+        refresh_token:
+          description: JWT refresh token (expires in 30 days)
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          title: refresh_token
+          type: string
+        token_type:
+          example: Bearer
+          title: token_type
+          type: string
+        expires_in:
+          description: Access token expiration time in seconds
+          example: 900
+          title: expires_in
+          type: integer
+        user:
+          $ref: "#/components/schemas/User"
+      title: TokenResponse_data
+      type: object
+    BookListResponse_data:
+      example:
+        books:
+        - author: F. Scott Fitzgerald
+          isbn: "9780743273565"
+          available: true
+          created_at: 2025-01-01T00:00:00Z
+          id: 1
+          title: The Great Gatsby
+        - author: F. Scott Fitzgerald
+          isbn: "9780743273565"
+          available: true
+          created_at: 2025-01-01T00:00:00Z
+          id: 1
+          title: The Great Gatsby
+        pagination:
+          next_page: 2
+          per_page: 10
+          has_next: true
+          total_pages: 5
+          has_prev: false
+          total_items: 50
+          prev_page: 0
+          current_page: 1
+      properties:
+        books:
+          items:
+            $ref: "#/components/schemas/Book"
+          title: books
+          type: array
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      title: BookListResponse_data
+      type: object
+  securitySchemes:
+    BearerAuth:
+      bearerFormat: JWT
+      description: JWT authorization using the Bearer scheme
+      scheme: bearer
+      type: http
+      x-bearerInfoFunc: openapi_server.controllers.security_controller.info_from_BearerAuth
