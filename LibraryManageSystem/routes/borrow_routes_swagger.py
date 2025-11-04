@@ -4,7 +4,7 @@ from services.borrow_service import BorrowService
 from utils.response_helpers import success_response, error_response
 
 # Create namespace for borrows API
-borrow_ns = Namespace('borrows', description='Book borrowing operations', path='/api/borrows')
+borrow_ns = Namespace('borrows', description='Book borrowing operations')
 
 # Define models for Swagger documentation
 book_model = borrow_ns.model('BookInfo', {

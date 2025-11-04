@@ -1,0 +1,481 @@
+{
+	"info": {
+		"_postman_id": "library-management-collection",
+		"name": "Library Management System API",
+		"description": "Complete test suite for Library Management System API with automated tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. User Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Test 1: Response status code should be 200",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// Test 2: Response should have JSON body",
+							"pm.test(\"Response has JSON body\", function () {",
+							"    pm.response.to.be.json;",
+							"});",
+							"",
+							"// Test 3: Success field should be true",
+							"pm.test(\"Success field is true\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.success).to.eql(true);",
+							"});",
+							"",
+							"// Test 4: Response should contain access_token",
+							"pm.test(\"Response contains access_token\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data).to.have.property('access_token');",
+							"    pm.expect(jsonData.data.access_token).to.be.a('string');",
+							"    pm.expect(jsonData.data.access_token.length).to.be.above(0);",
+							"});",
+							"",
+							"// Test 5: Response should contain user information",
+							"pm.test(\"Response contains user information\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data).to.have.property('user');",
+							"    pm.expect(jsonData.data.user).to.have.property('username');",
+							"    pm.expect(jsonData.data.user).to.have.property('email');",
+							"});",
+							"",
+							"// Test 6: Response should contain token_type as Bearer",
+							"pm.test(\"Token type is Bearer\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data.token_type).to.eql('Bearer');",
+							"});",
+							"",
+							"// Test 7: Response time should be less than 1000ms",
+							"pm.test(\"Response time is less than 1000ms\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(1000);",
+							"});",
+							"",
+							"// Save the token for future requests",
+							"if (pm.response.code === 200) {",
+							"    const jsonData = pm.response.json();",
+							"    pm.collectionVariables.set(\"access_token\", jsonData.data.access_token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"testuser\",\n    \"password\": \"test123\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/auth/login",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				},
+				"description": "Login to get authentication token"
+			},
+			"response": []
+		},
+		{
+			"name": "2. Get All Books",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Test 1: Response status code should be 200",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// Test 2: Response should be JSON",
+							"pm.test(\"Response has JSON body\", function () {",
+							"    pm.response.to.be.json;",
+							"});",
+							"",
+							"// Test 3: Success field should be true",
+							"pm.test(\"Success field is true\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.success).to.eql(true);",
+							"});",
+							"",
+							"// Test 4: Response should contain books array",
+							"pm.test(\"Response contains books array\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data).to.have.property('books');",
+							"    pm.expect(jsonData.data.books).to.be.an('array');",
+							"});",
+							"",
+							"// Test 5: Response should contain pagination info",
+							"pm.test(\"Response contains pagination information\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data).to.have.property('pagination');",
+							"    pm.expect(jsonData.data.pagination).to.have.property('page');",
+							"    pm.expect(jsonData.data.pagination).to.have.property('per_page');",
+							"    pm.expect(jsonData.data.pagination).to.have.property('total');",
+							"});",
+							"",
+							"// Test 6: Each book should have required fields",
+							"pm.test(\"Books have required fields\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    if (jsonData.data.books.length > 0) {",
+							"        const book = jsonData.data.books[0];",
+							"        pm.expect(book).to.have.property('id');",
+							"        pm.expect(book).to.have.property('title');",
+							"        pm.expect(book).to.have.property('author');",
+							"        pm.expect(book).to.have.property('isbn');",
+							"        pm.expect(book).to.have.property('available');",
+							"        ",
+							"        // Save a book ID for later tests",
+							"        pm.collectionVariables.set(\"book_id\", book.id);",
+							"    }",
+							"});",
+							"",
+							"// Test 7: Response time should be reasonable",
+							"pm.test(\"Response time is less than 1000ms\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(1000);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/books?page=1&per_page=10",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"books"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "1"
+						},
+						{
+							"key": "per_page",
+							"value": "10"
+						}
+					]
+				},
+				"description": "Retrieve all books with pagination"
+			},
+			"response": []
+		},
+		{
+			"name": "3. Create New Book",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Generate a unique ISBN based on timestamp",
+							"const timestamp = Date.now();",
+							"const uniqueISBN = '978' + timestamp.toString().slice(-10);",
+							"pm.collectionVariables.set('unique_isbn', uniqueISBN);"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Test 1: Response status code should be 201 (Created)",
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"// Test 2: Response should be JSON",
+							"pm.test(\"Response has JSON body\", function () {",
+							"    pm.response.to.be.json;",
+							"});",
+							"",
+							"// Test 3: Success field should be true",
+							"pm.test(\"Success field is true\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.success).to.eql(true);",
+							"});",
+							"",
+							"// Test 4: Response should contain created book data",
+							"pm.test(\"Response contains book data\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data).to.be.an('object');",
+							"    pm.expect(jsonData.data).to.have.property('id');",
+							"    pm.expect(jsonData.data).to.have.property('title');",
+							"    pm.expect(jsonData.data).to.have.property('author');",
+							"    pm.expect(jsonData.data).to.have.property('isbn');",
+							"});",
+							"",
+							"// Test 5: Created book should have correct title",
+							"pm.test(\"Created book has correct title\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data.title).to.eql('Introduction to Algorithms');",
+							"});",
+							"",
+							"// Test 6: Book should be available by default",
+							"pm.test(\"New book is available\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data.available).to.eql(true);",
+							"});",
+							"",
+							"// Test 7: Message should indicate success",
+							"pm.test(\"Success message is present\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.message).to.include('created');",
+							"});",
+							"",
+							"// Save the created book ID for future tests",
+							"if (pm.response.code === 201) {",
+							"    const jsonData = pm.response.json();",
+							"    pm.collectionVariables.set(\"created_book_id\", jsonData.data.id);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"title\": \"Introduction to Algorithms\",\n    \"author\": \"Thomas H. Cormen\",\n    \"isbn\": \"{{unique_isbn}}\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/books",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"books"
+					]
+				},
+				"description": "Create a new book in the library"
+			},
+			"response": []
+		},
+		{
+			"name": "4. Borrow a Book",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Test 1: Response status code should be 201",
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"// Test 2: Response should be JSON",
+							"pm.test(\"Response has JSON body\", function () {",
+							"    pm.response.to.be.json;",
+							"});",
+							"",
+							"// Test 3: Success field should be true",
+							"pm.test(\"Success field is true\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.success).to.eql(true);",
+							"});",
+							"",
+							"// Test 4: Response should contain borrow record",
+							"pm.test(\"Response contains borrow record\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data).to.have.property('id');",
+							"    pm.expect(jsonData.data).to.have.property('book_id');",
+							"    pm.expect(jsonData.data).to.have.property('borrower_name');",
+							"    pm.expect(jsonData.data).to.have.property('borrower_email');",
+							"    pm.expect(jsonData.data).to.have.property('borrow_date');",
+							"    pm.expect(jsonData.data).to.have.property('due_date');",
+							"});",
+							"",
+							"// Test 5: Book should be marked as not returned",
+							"pm.test(\"Book is not returned yet\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data.returned).to.eql(false);",
+							"});",
+							"",
+							"// Test 6: Book details should be included",
+							"pm.test(\"Book details are included\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data).to.have.property('book');",
+							"    pm.expect(jsonData.data.book).to.have.property('title');",
+							"    pm.expect(jsonData.data.book).to.have.property('author');",
+							"});",
+							"",
+							"// Test 7: Message should confirm borrowing",
+							"pm.test(\"Success message indicates borrowing\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.message).to.include('borrowed');",
+							"});",
+							"",
+							"// Save the borrow record ID for return test",
+							"if (pm.response.code === 201) {",
+							"    const jsonData = pm.response.json();",
+							"    pm.collectionVariables.set(\"borrow_record_id\", jsonData.data.id);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"book_id\": {{created_book_id}},\n    \"borrower_name\": \"Alice Smith\",\n    \"borrower_email\": \"alice@example.com\",\n    \"days\": 14\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/borrows",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"borrows"
+					]
+				},
+				"description": "Borrow a book from the library"
+			},
+			"response": []
+		},
+		{
+			"name": "5. Return a Book",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Test 1: Response status code should be 200",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// Test 2: Response should be JSON",
+							"pm.test(\"Response has JSON body\", function () {",
+							"    pm.response.to.be.json;",
+							"});",
+							"",
+							"// Test 3: Success field should be true",
+							"pm.test(\"Success field is true\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.success).to.eql(true);",
+							"});",
+							"",
+							"// Test 4: Response should contain updated borrow record",
+							"pm.test(\"Response contains borrow record\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data).to.have.property('id');",
+							"    pm.expect(jsonData.data).to.have.property('return_date');",
+							"});",
+							"",
+							"// Test 5: Book should be marked as returned",
+							"pm.test(\"Book is marked as returned\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data.returned).to.eql(true);",
+							"});",
+							"",
+							"// Test 6: Return date should be set",
+							"pm.test(\"Return date is set\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data.return_date).to.not.be.null;",
+							"    pm.expect(jsonData.data.return_date).to.be.a('string');",
+							"});",
+							"",
+							"// Test 7: Success message confirms return",
+							"pm.test(\"Success message indicates return\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.message).to.include('returned');",
+							"});",
+							"",
+							"// Test 8: Response time should be reasonable",
+							"pm.test(\"Response time is less than 1000ms\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(1000);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/borrows/{{borrow_record_id}}/return",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"borrows",
+						"{{borrow_record_id}}",
+						"return"
+					]
+				},
+				"description": "Return a borrowed book to the library"
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://127.0.0.1:5000",
+			"type": "string"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "book_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "created_book_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "borrow_record_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

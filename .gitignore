@@ -43,6 +43,12 @@ ENV/
 
 # OS
 .DS_Store
-Thumbs.dbLibraryManagementSystem/**/instance/
+Thumbs.db
+
+# Newman test reports
+newman-results.json
+newman-report.html
+
+LibraryManagementSystem/**/instance/
 LibraryManagementSystem/**/*.db
 LibraryManagementSystem/**/__pycache__/
