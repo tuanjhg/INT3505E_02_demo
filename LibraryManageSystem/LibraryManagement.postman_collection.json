@@ -188,6 +188,18 @@
 			"name": "3. Create New Book",
 			"event": [
 				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Generate a unique ISBN based on timestamp",
+							"const timestamp = Date.now();",
+							"const uniqueISBN = '978' + timestamp.toString().slice(-10);",
+							"pm.collectionVariables.set('unique_isbn', uniqueISBN);"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
 					"listen": "test",
 					"script": {
 						"exec": [
@@ -255,7 +267,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"title\": \"Introduction to Algorithms\",\n    \"author\": \"Thomas H. Cormen\",\n    \"isbn\": \"9780262033848\"\n}"
+					"raw": "{\n    \"title\": \"Introduction to Algorithms\",\n    \"author\": \"Thomas H. Cormen\",\n    \"isbn\": \"{{unique_isbn}}\"\n}"
 				},
 				"url": {
 					"raw": "{{base_url}}/api/books",
