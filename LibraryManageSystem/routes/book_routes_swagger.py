@@ -4,7 +4,7 @@ from services.book_service import BookService
 from utils.response_helpers import success_response, error_response, handle_service_error
 
 # Create namespace for books API
-book_ns = Namespace('books', description='Book management operations', path='/api/books')
+book_ns = Namespace('books', description='Book management operations')
 
 # Define models for Swagger documentation
 book_model = book_ns.model('Book', {
