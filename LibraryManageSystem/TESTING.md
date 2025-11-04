@@ -348,7 +348,7 @@ jobs:
 ## Total Test Coverage
 
 **Total Endpoints Tested:** 5  
-**Total Test Assertions:** 43
+**Total Test Assertions:** 36
 
 - User Login: 7 tests
 - Get All Books: 7 tests  

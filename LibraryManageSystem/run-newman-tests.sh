@@ -62,27 +62,13 @@ newman run "$COLLECTION_PATH" \
     --timeout-request 10000 \
     --bail
 
-# Check exit code
-if [ $? -eq 0 ]; then
-    echo ""
-    echo "=================================================="
-    echo "✅ All tests passed successfully!"
-    echo "=================================================="
-    echo ""
-    echo "Test reports generated:"
-    echo "  📄 JSON Report: newman-results.json"
-    echo "  📄 HTML Report: newman-report.html"
-    echo ""
-    exit 0
-else
-    echo ""
-    echo "=================================================="
-    echo "❌ Some tests failed"
-    echo "=================================================="
-    echo ""
-    echo "Check the reports for details:"
-    echo "  📄 JSON Report: newman-results.json"
-    echo "  📄 HTML Report: newman-report.html"
-    echo ""
-    exit 1
-fi
+# If we reach here, all tests passed (set -e would have exited on failure)
+echo ""
+echo "=================================================="
+echo "✅ All tests passed successfully!"
+echo "=================================================="
+echo ""
+echo "Test reports generated:"
+echo "  📄 JSON Report: newman-results.json"
+echo "  📄 HTML Report: newman-report.html"
+echo ""
