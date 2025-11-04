@@ -2,6 +2,8 @@
 
 This document describes how to use the Postman test suite and run automated tests with Newman for the Library Management System API.
 
+newman run "D:\VisualCode\INT3505E_02_demo\LibraryManageSystem\LibraryManagement.postman_collection.json"
+
 ## Overview
 
 The test suite includes comprehensive tests for 5 key endpoints:
