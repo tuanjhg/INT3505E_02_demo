@@ -272,7 +272,6 @@ export default function () {
 }
 
 export function handleSummary(data) {
-  // Generate JSON output for custom HTML report
   return {
     'summary.json': JSON.stringify(data),
     'stdout': textSummary(data, { indent: ' ', enableColors: true }),

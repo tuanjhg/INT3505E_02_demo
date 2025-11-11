@@ -1,0 +1,981 @@
+{
+  "info": {
+    "name": "Library Management System API v2",
+    "_postman_id": "library-api-v2-2025",
+    "description": "Complete API v2 collection for Library Management System with automated tests and examples.\n\n## Features\n- RESTful endpoints with proper HTTP methods\n- Refresh token support\n- Structured error handling\n- Request/Response validation\n- Auto-refreshing access tokens\n\n## Setup\n1. Import this collection\n2. Set up environment variables (see Variables tab)\n3. Run 'Auth > Login' first to get tokens\n4. Other requests will auto-use the token\n\n## Documentation\n- Migration Guide: MIGRATION_GUIDE_V1_TO_V2.md\n- Deprecation Notice: DEPRECATION_NOTICE.md\n- API Strategy: API_VERSIONING_STRATEGY.md",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:5000",
+      "type": "string"
+    },
+    {
+      "key": "api_version",
+      "value": "v2",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "token_expiry",
+      "value": "0",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "book_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "borrow_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-refresh token if expired (5 min buffer)",
+          "const tokenExpiry = parseInt(pm.collectionVariables.get('token_expiry') || '0');",
+          "const now = Date.now();",
+          "const buffer = 5 * 60 * 1000; // 5 minutes",
+          "",
+          "if (tokenExpiry > 0 && now >= tokenExpiry - buffer) {",
+          "    console.log('Token expired or expiring soon, refreshing...');",
+          "    ",
+          "    const refreshToken = pm.collectionVariables.get('refresh_token');",
+          "    if (refreshToken) {",
+          "        pm.sendRequest({",
+          "            url: pm.collectionVariables.get('base_url') + '/api/v2/auth/refresh',",
+          "            method: 'POST',",
+          "            header: { 'Content-Type': 'application/json' },",
+          "            body: {",
+          "                mode: 'raw',",
+          "                raw: JSON.stringify({ refresh_token: refreshToken })",
+          "            }",
+          "        }, (err, res) => {",
+          "            if (err) {",
+          "                console.error('Token refresh failed:', err);",
+          "            } else {",
+          "                const data = res.json().data;",
+          "                pm.collectionVariables.set('access_token', data.access_token);",
+          "                pm.collectionVariables.set('token_expiry', Date.now() + (data.expires_in * 1000));",
+          "                console.log('Token refreshed successfully');",
+          "            }",
+          "        });",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has v2 structure', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status', 'success');",
+                  "    pm.expect(jsonData).to.have.property('data');",
+                  "    pm.expect(jsonData).to.have.property('meta');",
+                  "});",
+                  "",
+                  "pm.test('Response includes user data', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('user');",
+                  "    pm.expect(jsonData.data.user).to.have.property('id');",
+                  "    pm.expect(jsonData.data.user).to.have.property('username');",
+                  "});",
+                  "",
+                  "pm.test('Meta includes timestamp and version', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.meta).to.have.property('timestamp');",
+                  "    pm.expect(jsonData.meta).to.have.property('version', '2.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser_{{$randomInt}}\",\n  \"email\": \"test{{$randomInt}}@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"full_name\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "auth", "register"]
+            },
+            "description": "Register a new user account.\n\n**Changes from v1:**\n- Response structure standardized\n- Added meta information\n- Better error messages"
+          }
+        },
+        {
+          "name": "Login (Get Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has v2 structure', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status', 'success');",
+                  "    pm.expect(jsonData).to.have.property('data');",
+                  "    pm.expect(jsonData).to.have.property('meta');",
+                  "});",
+                  "",
+                  "pm.test('Response includes access and refresh tokens', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('access_token');",
+                  "    pm.expect(jsonData.data).to.have.property('refresh_token');",
+                  "    pm.expect(jsonData.data).to.have.property('expires_in');",
+                  "    pm.expect(jsonData.data).to.have.property('token_type', 'Bearer');",
+                  "});",
+                  "",
+                  "pm.test('Tokens are saved to variables', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    ",
+                  "    // Save tokens",
+                  "    pm.collectionVariables.set('access_token', jsonData.data.access_token);",
+                  "    pm.collectionVariables.set('refresh_token', jsonData.data.refresh_token);",
+                  "    ",
+                  "    // Calculate expiry time",
+                  "    const expiresIn = jsonData.data.expires_in * 1000; // Convert to ms",
+                  "    const expiryTime = Date.now() + expiresIn;",
+                  "    pm.collectionVariables.set('token_expiry', expiryTime);",
+                  "    ",
+                  "    // Save user info",
+                  "    if (jsonData.data.user) {",
+                  "        pm.collectionVariables.set('user_id', jsonData.data.user.id);",
+                  "    }",
+                  "    ",
+                  "    console.log('✓ Access token saved');",
+                  "    console.log('✓ Refresh token saved');",
+                  "    console.log(`✓ Token expires in ${jsonData.data.expires_in} seconds`);",
+                  "});",
+                  "",
+                  "pm.test('Response time is acceptable', () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"test123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/auth/token",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "auth", "token"]
+            },
+            "description": "Login and receive access + refresh tokens.\n\n**Changes from v1:**\n- Endpoint: `/auth/login` → `/auth/token`\n- Added refresh_token in response\n- Shorter token expiry (1 hour instead of 24h)\n- Added expires_in field"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('New access token received', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('access_token');",
+                  "    pm.expect(jsonData.data).to.have.property('expires_in');",
+                  "});",
+                  "",
+                  "pm.test('Access token updated', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.data.access_token);",
+                  "    ",
+                  "    const expiryTime = Date.now() + (jsonData.data.expires_in * 1000);",
+                  "    pm.collectionVariables.set('token_expiry', expiryTime);",
+                  "    ",
+                  "    console.log('✓ Access token refreshed');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "auth", "refresh"]
+            },
+            "description": "**NEW in v2**: Refresh access token without re-login.\n\nUse the refresh_token from login to get a new access_token."
+          }
+        }
+      ],
+      "description": "Authentication endpoints with v2 improvements:\n- Refresh token support\n- Shorter-lived access tokens\n- Better security"
+    },
+    {
+      "name": "Books",
+      "item": [
+        {
+          "name": "Get All Books (Paginated)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has v2 structure', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status', 'success');",
+                  "    pm.expect(jsonData).to.have.property('data');",
+                  "    pm.expect(jsonData).to.have.property('meta');",
+                  "});",
+                  "",
+                  "pm.test('Data is array of books', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Pagination info in meta', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.meta).to.have.property('pagination');",
+                  "    pm.expect(jsonData.meta.pagination).to.have.all.keys(",
+                  "        'limit', 'offset', 'total', 'has_next', 'has_prev'",
+                  "    );",
+                  "});",
+                  "",
+                  "pm.test('Books have required fields', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.data.length > 0) {",
+                  "        const book = jsonData.data[0];",
+                  "        pm.expect(book).to.have.property('id');",
+                  "        pm.expect(book).to.have.property('title');",
+                  "        pm.expect(book).to.have.property('author');",
+                  "        pm.expect(book).to.have.property('isbn');",
+                  "        ",
+                  "        // Save first book ID for other tests",
+                  "        pm.collectionVariables.set('book_id', book.id);",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('Response time is acceptable', () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/books?limit=10&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "books"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of items per page"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Number of items to skip"
+                },
+                {
+                  "key": "filter[title]",
+                  "value": "python",
+                  "disabled": true,
+                  "description": "Filter by title"
+                },
+                {
+                  "key": "filter[available]",
+                  "value": "true",
+                  "disabled": true,
+                  "description": "Filter by availability"
+                },
+                {
+                  "key": "sort",
+                  "value": "-created_at",
+                  "disabled": true,
+                  "description": "Sort by field (prefix - for desc)"
+                }
+              ]
+            },
+            "description": "Get paginated list of books.\n\n**Changes from v1:**\n- Parameters: `page`/`per_page` → `offset`/`limit`\n- Response: Books directly in data array (not nested)\n- Pagination: More detailed info with `has_next`/`has_prev`\n- Filtering: Structured `filter[field]` syntax\n- Sorting: Consistent `sort` parameter"
+          }
+        },
+        {
+          "name": "Get Book by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains book data', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.expect(jsonData.data).to.have.property('title');",
+                  "    pm.expect(jsonData.data).to.have.property('author');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/books/{{book_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "books", "{{book_id}}"]
+            },
+            "description": "Get details of a specific book."
+          }
+        },
+        {
+          "name": "Create Book",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Book created with correct data', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.expect(jsonData.data.title).to.include('Test Book');",
+                  "    ",
+                  "    // Save created book ID",
+                  "    pm.collectionVariables.set('book_id', jsonData.data.id);",
+                  "    console.log(`✓ Book created with ID: ${jsonData.data.id}`);",
+                  "});",
+                  "",
+                  "pm.test('Date fields in ISO 8601 format', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.data.created_at) {",
+                  "        pm.expect(jsonData.data.created_at).to.match(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$/);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Book {{$timestamp}}\",\n  \"author\": \"Test Author\",\n  \"isbn\": \"ISBN-{{$randomInt}}\",\n  \"published_date\": \"2024-01-01\",\n  \"copies\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/books",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "books"]
+            },
+            "description": "Create a new book.\n\n**Changes from v1:**\n- Date fields in ISO 8601 format\n- Better validation error messages"
+          }
+        },
+        {
+          "name": "Update Book (Full)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Book updated successfully', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.equal('success');",
+                  "    pm.expect(jsonData.data.title).to.include('Updated');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Book Title\",\n  \"author\": \"Updated Author\",\n  \"isbn\": \"ISBN-UPDATED\",\n  \"published_date\": \"2024-06-01\",\n  \"copies\": 10\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/books/{{book_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "books", "{{book_id}}"]
+            },
+            "description": "Full update of a book (all fields required).\n\n**Changes from v1:**\n- Proper PUT semantics (full replacement)"
+          }
+        },
+        {
+          "name": "Update Book (Partial)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Book partially updated', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.equal('success');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"copies\": 15\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/books/{{book_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "books", "{{book_id}}"]
+            },
+            "description": "**NEW in v2**: Partial update (only specified fields).\n\nUse PATCH to update specific fields without sending all data."
+          }
+        },
+        {
+          "name": "Delete Book",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200 or 204', () => {",
+                  "    pm.expect([200, 204]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/books/{{book_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "books", "{{book_id}}"]
+            },
+            "description": "Delete a book."
+          }
+        },
+        {
+          "name": "Search Books with Filters",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Filtered results returned', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "    ",
+                  "    // If results exist, verify filter applied",
+                  "    if (jsonData.data.length > 0) {",
+                  "        jsonData.data.forEach(book => {",
+                  "            pm.expect(book.available).to.equal(true);",
+                  "        });",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/books?filter[available]=true&filter[author]=Smith&sort=-created_at&limit=20&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "books"],
+              "query": [
+                {
+                  "key": "filter[available]",
+                  "value": "true",
+                  "description": "Only available books"
+                },
+                {
+                  "key": "filter[author]",
+                  "value": "Smith",
+                  "description": "Author contains 'Smith'"
+                },
+                {
+                  "key": "sort",
+                  "value": "-created_at",
+                  "description": "Sort by created_at descending"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "**NEW in v2**: Advanced filtering and sorting.\n\nUse `filter[field]` syntax for structured filtering and `sort` with `-` prefix for descending."
+          }
+        }
+      ],
+      "description": "Book management endpoints with v2 improvements:\n- Better pagination\n- Structured filtering\n- PATCH support for partial updates"
+    },
+    {
+      "name": "Borrows",
+      "item": [
+        {
+          "name": "Get All Borrows (Paginated)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has v2 structure', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status', 'success');",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "    pm.expect(jsonData.meta).to.have.property('pagination');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/borrows?limit=10&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "borrows"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "filter[returned]",
+                  "value": "false",
+                  "disabled": true,
+                  "description": "Filter unreturned books"
+                }
+              ]
+            },
+            "description": "Get paginated list of borrow records."
+          }
+        },
+        {
+          "name": "Borrow a Book",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Borrow record created', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.expect(jsonData.data).to.have.property('book_id');",
+                  "    pm.expect(jsonData.data).to.have.property('user_id');",
+                  "    pm.expect(jsonData.data.returned).to.equal(false);",
+                  "    ",
+                  "    // Save borrow ID for return test",
+                  "    pm.collectionVariables.set('borrow_id', jsonData.data.id);",
+                  "    console.log(`✓ Borrow record created with ID: ${jsonData.data.id}`);",
+                  "});",
+                  "",
+                  "pm.test('Dates in ISO 8601 format', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.borrow_date).to.match(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$/);",
+                  "    pm.expect(jsonData.data.due_date).to.match(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"book_id\": {{book_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/borrows",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "borrows"]
+            },
+            "description": "Create a new borrow record.\n\n**Changes from v1:**\n- All dates in ISO 8601 format\n- Better validation"
+          }
+        },
+        {
+          "name": "Get Borrow by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Borrow record returned', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.expect(jsonData.data).to.have.property('book');",
+                  "    pm.expect(jsonData.data).to.have.property('user');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/borrows/{{borrow_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "borrows", "{{borrow_id}}"]
+            },
+            "description": "Get details of a specific borrow record."
+          }
+        },
+        {
+          "name": "Return Book (PATCH)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Book marked as returned', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.returned).to.equal(true);",
+                  "    pm.expect(jsonData.data).to.have.property('return_date');",
+                  "    pm.expect(jsonData.data.return_date).to.not.be.null;",
+                  "});",
+                  "",
+                  "pm.test('Return date in ISO 8601 format', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.return_date).to.match(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"returned\": true,\n  \"return_date\": \"{{$isoTimestamp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/borrows/{{borrow_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "borrows", "{{borrow_id}}"]
+            },
+            "description": "**BREAKING CHANGE from v1:**\n\nv1: `POST /borrows/{id}/return`\nv2: `PATCH /borrows/{id}` with body `{\"returned\": true}`\n\nThis aligns with RESTful principles - updating a resource uses PATCH."
+          }
+        }
+      ],
+      "description": "Borrow management with v2 improvements:\n- RESTful HTTP methods (PATCH for returns)\n- ISO 8601 date format\n- Better error handling"
+    },
+    {
+      "name": "Error Examples",
+      "item": [
+        {
+          "name": "404 Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404', () => {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error response has v2 structure', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status', 'error');",
+                  "    pm.expect(jsonData).to.have.property('errors');",
+                  "    pm.expect(jsonData.errors).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Error has required fields', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    const error = jsonData.errors[0];",
+                  "    pm.expect(error).to.have.property('code', 'RESOURCE_NOT_FOUND');",
+                  "    pm.expect(error).to.have.property('message');",
+                  "});",
+                  "",
+                  "pm.test('Meta includes request_id', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.meta).to.have.property('request_id');",
+                  "    console.log(`Request ID: ${jsonData.meta.request_id}`);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/books/99999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "books", "99999"]
+            },
+            "description": "Example of 404 error in v2 format.\n\n**v2 Error Structure:**\n```json\n{\n  \"status\": \"error\",\n  \"errors\": [\n    {\n      \"code\": \"RESOURCE_NOT_FOUND\",\n      \"message\": \"Book with ID 99999 not found\",\n      \"field\": \"book_id\"\n    }\n  ],\n  \"meta\": {\n    \"request_id\": \"abc-123\",\n    \"timestamp\": \"2025-11-11T10:00:00Z\"\n  }\n}\n```"
+          }
+        },
+        {
+          "name": "400 Validation Error",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', () => {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Validation errors returned', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.errors).to.be.an('array');",
+                  "    pm.expect(jsonData.errors.length).to.be.greaterThan(0);",
+                  "    ",
+                  "    const error = jsonData.errors[0];",
+                  "    pm.expect(error).to.have.property('code', 'VALIDATION_ERROR');",
+                  "    pm.expect(error).to.have.property('field');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/books",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "books"]
+            },
+            "description": "Example of validation error in v2 format.\n\nMissing required fields will return structured error with field names."
+          }
+        },
+        {
+          "name": "401 Unauthorized",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Authentication error returned', () => {",
+                  "    const jsonData = pm.response.json();",
+                  "    const error = jsonData.errors[0];",
+                  "    pm.expect(error.code).to.equal('AUTHENTICATION_FAILED');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "invalid_token_here",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/books",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "books"]
+            },
+            "description": "Example of authentication error."
+          }
+        }
+      ],
+      "description": "Error handling examples showing v2 structured error format:\n- Machine-readable error codes\n- Field-level validation\n- Request tracing with request_id"
+    }
+  ]
+}
