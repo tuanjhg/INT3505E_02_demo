@@ -2,6 +2,7 @@ from flask import request, make_response
 from flask_restx import Namespace, Resource, fields
 from services.auth_service import AuthService
 from utils.response_helpers import success_response, error_response
+from utils.rate_limiter import limiter
 from functools import wraps
 import jwt
 from os import getenv
@@ -54,8 +55,14 @@ class Login(Resource):
     @auth_ns.expect(login_model, validate=True)
     @auth_ns.response(200, 'Success', token_response_model)
     @auth_ns.response(401, 'Invalid credentials')
+    @auth_ns.response(429, 'Rate limit exceeded')
+    @limiter.limit("5 per minute")
+    @limiter.limit("20 per hour")
     def post(self):
-        """Login with username and password - returns access & refresh tokens"""
+        """Login with username and password - returns access & refresh tokens
+        
+        Rate Limit: 5 requests per minute, 20 requests per hour
+        """
         data = request.json
         
         username = data.get('username')
@@ -103,8 +110,14 @@ class Register(Resource):
     @auth_ns.expect(register_model, validate=True)
     @auth_ns.response(201, 'User created successfully')
     @auth_ns.response(400, 'Validation error')
+    @auth_ns.response(429, 'Rate limit exceeded')
+    @limiter.limit("3 per minute")
+    @limiter.limit("10 per hour")
     def post(self):
-        """Register a new user - returns access & refresh tokens"""
+        """Register a new user - returns access & refresh tokens
+        
+        Rate Limit: 3 requests per minute, 10 requests per hour
+        """
         data = request.json
         
         username = data.get('username')

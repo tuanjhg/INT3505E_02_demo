@@ -30,6 +30,13 @@ def create_app(config=None):
 
     db.init_app(app)
     
+    # Initialize rate limiter
+    from utils.rate_limiter import init_limiter, rate_limit_error_handler
+    limiter = init_limiter(app)
+    
+    # Register rate limit error handler
+    app.errorhandler(429)(rate_limit_error_handler)
+    
 
     from models.book import Book
     from models.borrow import BorrowRecord
