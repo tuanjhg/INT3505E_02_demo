@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: library-nginx-exporter
+  namespace: library-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: library-nginx-exporter
+  template:
+    metadata:
+      labels:
+        app: library-nginx-exporter
+    spec:
+      containers:
+      - name: nginx-exporter
+        image: nginx/nginx-prometheus-exporter:latest
+        ports:
+        - containerPort: 9113
+        command:
+        - -nginx.scrape-uri=http://library-nginx:80/nginx_status
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: library-nginx-exporter
+  namespace: library-system
+spec:
+  selector:
+    app: library-nginx-exporter
+  ports:
+  - port: 9113
+    targetPort: 9113
+  type: ClusterIP

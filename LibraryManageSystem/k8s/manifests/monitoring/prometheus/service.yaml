@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: library-prometheus
+  namespace: library-system
+spec:
+  selector:
+    app: library-prometheus
+  ports:
+  - port: 9090
+    targetPort: 9090
+  type: ClusterIP

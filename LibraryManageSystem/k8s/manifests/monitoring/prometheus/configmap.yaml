@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: library-system
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    rule_files:
+      - /etc/prometheus/alert_rules.yml
+
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets:
+
+    scrape_configs:
+      - job_name: 'library-app'
+        static_configs:
+          - targets: ['library-app:8000']
+        metrics_path: '/metrics'
+
+      - job_name: 'postgres-exporter'
+        static_configs:
+          - targets: ['library-postgres-exporter:9187']
+
+      - job_name: 'redis-exporter'
+        static_configs:
+          - targets: ['library-redis-exporter:9121']
+
+      - job_name: 'nginx-exporter'
+        static_configs:
+          - targets: ['library-nginx-exporter:9113']
+
+      - job_name: 'node-exporter'
+        static_configs:
+          - targets: ['library-node-exporter:9100']
+
+  alert_rules.yml: |
+    groups:
+    - name: library-alerts
+      rules:
+      - alert: HighRequestLatency
+        expr: http_request_duration_seconds{quantile="0.5"} > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High request latency"

@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: library-postgres-exporter
+  namespace: library-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: library-postgres-exporter
+  template:
+    metadata:
+      labels:
+        app: library-postgres-exporter
+    spec:
+      containers:
+      - name: postgres-exporter
+        image: prometheuscommunity/postgres-exporter:latest
+        ports:
+        - containerPort: 9187
+        env:
+        - name: DATA_SOURCE_NAME
+          value: postgresql://library_user:$(POSTGRES_PASSWORD)@library-postgres:5432/library_db?sslmode=disable
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: library-secrets
+              key: POSTGRES_PASSWORD
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: library-postgres-exporter
+  namespace: library-system
+spec:
+  selector:
+    app: library-postgres-exporter
+  ports:
+  - port: 9187
+    targetPort: 9187
+  type: ClusterIP

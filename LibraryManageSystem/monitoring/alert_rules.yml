@@ -1,0 +1,183 @@
+# ============================================================================
+# Prometheus Alerting Rules for Library Management System
+# ============================================================================
+
+groups:
+  - name: library_api_alerts
+    interval: 30s
+    rules:
+      # High Error Rate Alert
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_errors_total[5m])) 
+            / 
+            sum(rate(http_requests_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+      # Critical Error Rate
+      - alert: CriticalErrorRate
+        expr: |
+          (
+            sum(rate(http_errors_total[5m])) 
+            / 
+            sum(rate(http_requests_total[5m]))
+          ) > 0.10
+        for: 2m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "CRITICAL: Very high error rate"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 10%)"
+
+      # Slow Response Time (p95)
+      - alert: SlowResponseTime
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket[5m])
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "Slow API response time"
+          description: "95th percentile response time is {{ $value }}s (threshold: 1s)"
+
+      # Very Slow Response Time
+      - alert: VerySlowResponseTime
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket[5m])
+          ) > 3
+        for: 5m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "CRITICAL: Very slow response time"
+          description: "95th percentile response time is {{ $value }}s (threshold: 3s)"
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: system_memory_usage_percent > 80
+        for: 10m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}% (threshold: 80%)"
+
+      # Critical Memory Usage
+      - alert: CriticalMemoryUsage
+        expr: system_memory_usage_percent > 90
+        for: 5m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "CRITICAL: Very high memory usage"
+          description: "Memory usage is {{ $value }}% (threshold: 90%)"
+
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: system_cpu_usage_percent > 80
+        for: 15m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}% (threshold: 80%)"
+
+      # Disk Space Warning
+      - alert: DiskSpaceWarning
+        expr: system_disk_usage_percent > 80
+        for: 10m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "Disk space running low"
+          description: "Disk usage is {{ $value }}% (threshold: 80%)"
+
+      # Critical Disk Space
+      - alert: CriticalDiskSpace
+        expr: system_disk_usage_percent > 90
+        for: 5m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "CRITICAL: Disk space critically low"
+          description: "Disk usage is {{ $value }}% (threshold: 90%)"
+
+      # Application Down
+      - alert: ApplicationDown
+        expr: up{job="library-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "Application is down"
+          description: "Library API is not responding to health checks"
+
+      # Database Connection Issues
+      - alert: HighDatabaseErrors
+        expr: rate(db_query_duration_seconds_count{query_type="error"}[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "High database error rate"
+          description: "Database errors: {{ $value }} per second"
+
+      # No Requests
+      - alert: NoRequests
+        expr: rate(http_requests_total[10m]) == 0
+        for: 15m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "No requests received"
+          description: "API has not received any requests in the last 15 minutes"
+
+      # Request Spike
+      - alert: RequestSpike
+        expr: |
+          rate(http_requests_total[5m]) 
+          > 
+          (avg_over_time(rate(http_requests_total[5m])[1h:5m]) * 2)
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "Unusual request spike detected"
+          description: "Request rate is {{ $value }} req/s (2x normal average)"
+
+  - name: business_metrics_alerts
+    interval: 60s
+    rules:
+      # High Number of Overdue Books (example business metric)
+      - alert: HighOverdueBooks
+        expr: books_borrowed > (books_total * 0.5)
+        for: 1h
+        labels:
+          severity: info
+          component: business
+        annotations:
+          summary: "High number of borrowed books"
+          description: "{{ $value }} books are currently borrowed (>50% of total)"
