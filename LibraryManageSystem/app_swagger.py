@@ -4,6 +4,11 @@ from flask_restx import Api
 from dotenv import load_dotenv
 from models import db
 
+# Import monitoring and rate limiting
+from utils.monitoring_middleware import setup_monitoring
+from utils.rate_limiter import setup_rate_limiting
+from utils.request_logger_middleware import setup_request_logging
+
 load_dotenv()
 
 def create_app(config=None):
@@ -27,15 +32,16 @@ def create_app(config=None):
     if config:
         app.config.update(config)
     
-
     db.init_app(app)
     
 
     from models.book import Book
     from models.borrow import BorrowRecord
-    from models.user import User
+    # Add health check endpoint
+    @app.route('/health')
+    def health_check():
+        return {'status': 'healthy', 'timestamp': '2025-11-18T10:00:00Z'}
     
-
     api = Api(
         app,
         version=os.getenv('API_VERSION', '1.0'),
@@ -43,6 +49,7 @@ def create_app(config=None):
         description=os.getenv('API_DESCRIPTION', 'A comprehensive library management system API'),
         doc='/swagger/',  # Swagger UI will be available at /swagger/
         prefix='/api',
+        catch_all_404=False,  # Disable catch_all_404 to allow custom routes
         authorizations={
             'apikey': {
                 'type': 'apiKey',
@@ -59,9 +66,17 @@ def create_app(config=None):
     from routes.borrow_routes_swagger import borrow_ns
     from routes.auth_routes_swagger import auth_ns
     
+    # Register versioned book routes
+    from routes.book_routes_v1 import book_v1_ns
+    from routes.book_routes_v2 import book_v2_ns
+    
     api.add_namespace(auth_ns)
     api.add_namespace(book_ns)
     api.add_namespace(borrow_ns)
+    
+    # Add versioned endpoints
+    api.add_namespace(book_v1_ns, path='/v1/books')
+    api.add_namespace(book_v2_ns, path='/v2/books')
     from routes.web_routes import web_bp
     app.register_blueprint(web_bp)
     
@@ -77,6 +92,22 @@ def create_app(config=None):
     # Create database tables
     with app.app_context():
         db.create_all()
+    
+    # Setup monitoring, rate limiting, and logging
+    setup_monitoring(app)
+    setup_rate_limiting(app)
+    setup_request_logging(app)
+    
+    # Add Prometheus metrics endpoint (after all setup to avoid conflicts)
+    @app.route('/metrics')
+    def metrics():
+        try:
+            from utils.metrics_collector import prometheus_metrics
+            return prometheus_metrics.get_metrics_response()
+        except Exception as e:
+            # Return basic metrics even if there's an error
+            return f"# Error collecting metrics: {str(e)}\n# Basic health check\nlibrary_api_up 1\n", 200, {'Content-Type': 'text/plain; charset=utf-8'}
+    
     
     return app
 
@@ -105,3 +136,6 @@ if __name__ == '__main__':
     debug = os.getenv('DEBUG', 'True').lower() == 'true'
     
     app.run(host=host, port=port, debug=debug)
+
+# Create app instance for Gunicorn
+app = create_app()

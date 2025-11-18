@@ -92,14 +92,6 @@ If no `.env` file is provided, the application uses these defaults:
 
 ### Running the Application
 
-#### Option 1: Basic Flask App
-```bash
-python app_new.py
-```
-- Web interface: http://127.0.0.1:5000
-- API endpoints available but no Swagger documentation
-
-#### Option 2: Flask App with Swagger
 ```bash
 python app_swagger.py
 ```

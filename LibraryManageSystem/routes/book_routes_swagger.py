@@ -2,6 +2,7 @@ from flask import request
 from flask_restx import Namespace, Resource, fields
 from services.book_service import BookService
 from utils.response_helpers import success_response, error_response, handle_service_error
+from utils.rate_limiter import limiter, PUBLIC_READ_LIMITS, WRITE_LIMITS
 
 # Create namespace for books API
 book_ns = Namespace('books', description='Book management operations')
@@ -42,6 +43,7 @@ class BookList(Resource):
     @book_ns.param('per_page', 'Items per page (5, 10, 15)', type='integer', default=10, enum=[5, 10, 15])
     @book_ns.param('search', 'Search query for title or author', type='string', required=False)
     @book_ns.param('available_only', 'Show only available books', type='boolean', default=False)
+
     def get(self):
         """Get all books with search, filtering, and pagination"""
         try:

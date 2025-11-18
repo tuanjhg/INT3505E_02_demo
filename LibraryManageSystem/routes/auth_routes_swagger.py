@@ -2,6 +2,7 @@ from flask import request, make_response
 from flask_restx import Namespace, Resource, fields
 from services.auth_service import AuthService
 from utils.response_helpers import success_response, error_response
+from utils.rate_limiter import limiter, AUTH_LIMITS
 from functools import wraps
 import jwt
 from os import getenv
@@ -54,6 +55,7 @@ class Login(Resource):
     @auth_ns.expect(login_model, validate=True)
     @auth_ns.response(200, 'Success', token_response_model)
     @auth_ns.response(401, 'Invalid credentials')
+    @limiter.limit(AUTH_LIMITS)
     def post(self):
         """Login with username and password - returns access & refresh tokens"""
         data = request.json
@@ -103,6 +105,7 @@ class Register(Resource):
     @auth_ns.expect(register_model, validate=True)
     @auth_ns.response(201, 'User created successfully')
     @auth_ns.response(400, 'Validation error')
+    @limiter.limit(AUTH_LIMITS)
     def post(self):
         """Register a new user - returns access & refresh tokens"""
         data = request.json
@@ -215,6 +218,7 @@ class RefreshToken(Resource):
     @auth_ns.expect(refresh_token_model, validate=True)
     @auth_ns.response(200, 'Token refreshed successfully')
     @auth_ns.response(401, 'Invalid refresh token')
+    @limiter.limit(AUTH_LIMITS)
     def post(self):
         """Refresh access token using refresh token"""
         data = request.json
