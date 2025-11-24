@@ -338,6 +338,55 @@
     </div>
 
     <script>
+    // Load admin notifications for dropdown (AJAX)
+    async function loadNotifications() {
+        try {
+            const res = await fetch('/api/notifications', { credentials: 'same-origin' });
+            if (!res.ok) throw new Error('Not allowed');
+            const data = await res.json();
+            const menu = document.getElementById('notificationMenu');
+            const countEl = document.getElementById('notifCount');
+            menu.innerHTML = '';
+            if (data.length === 0) {
+                menu.innerHTML = '<a class="dropdown-item" href="#">No new notifications</a>';
+                countEl.style.display = 'none';
+                return;
+            }
+            let unread = 0;
+            data.slice(0,10).forEach(n => {
+                const a = document.createElement('a');
+                a.className = 'dropdown-item';
+                a.href = '/notifications';
+                a.textContent = n.message + ' — ' + (new Date(n.created_at)).toLocaleString();
+                menu.appendChild(a);
+                if (!n.read) unread += 1;
+            });
+            if (unread > 0) {
+                countEl.textContent = unread;
+                countEl.style.display = 'inline-block';
+            } else {
+                countEl.style.display = 'none';
+            }
+        } catch (err) {
+            // ignore — user may not be admin or not logged in
+            const menu = document.getElementById('notificationMenu');
+            if (menu) menu.innerHTML = '<a class="dropdown-item" href="#">No new notifications</a>';
+        }
+    }
+
+    // Load notifications on page load and poll every 30s
+    document.addEventListener('DOMContentLoaded', function() {
+        loadNotifications();
+        setInterval(loadNotifications, 30000);
+        const dropdownBtn = document.getElementById('notificationDropdown');
+        if (dropdownBtn) {
+            dropdownBtn.addEventListener('click', function() {
+                // Navigate to notifications page when clicked
+                window.location.href = '/notifications';
+            });
+        }
+    });
+
     // Clear all token storage on logout
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {

@@ -279,3 +279,19 @@ def history():
         # Fallback to basic method if paginated method doesn't work properly
         records = BorrowService.get_all_borrow_records()
         return render_template('history.html', records=records, today=datetime.utcnow())
+
+@web_bp.route('/notifications')
+@login_required
+def notifications():
+    """Fetch and display admin notifications"""
+    if not session.get('is_admin'):
+        flash('Access denied: Admins only', 'error')
+        return redirect(url_for('web.index'))
+
+    # Example: Fetch notifications from a database or service
+    notifications = [
+        {"message": "User John Doe borrowed 'The Great Gatsby'", "timestamp": "2025-11-24 10:00:00"},
+        {"message": "User Jane Smith paid overdue fees", "timestamp": "2025-11-23 15:30:00"}
+    ]
+
+    return render_template('notifications.html', notifications=notifications)
