@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library API - Developer Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/portal.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('portal.portal_home') }}" class="nav-logo">
+                <i class="fas fa-book"></i>
+                <span>Library API</span>
+            </a>
+            <div class="nav-links">
+                <a href="{{ url_for('portal.portal_home') }}" class="active">Home</a>
+                <a href="{{ url_for('portal.portal_docs') }}">Documentation</a>
+                <a href="{{ url_for('portal.portal_explorer') }}">API Explorer</a>
+                <a href="{{ url_for('portal.portal_getting_started') }}">Getting Started</a>
+                <a href="/swagger/" class="btn-swagger" target="_blank">
+                    <i class="fas fa-external-link-alt"></i> Swagger UI
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">🚀 API as a Product</div>
+            <h1>Library Management API</h1>
+            <p class="hero-subtitle">
+                Build powerful library applications with our RESTful API. 
+                Manage books, users, and borrowing records with ease.
+            </p>
+            <div class="hero-buttons">
+                <a href="{{ url_for('portal.portal_getting_started') }}" class="btn btn-primary">
+                    <i class="fas fa-rocket"></i> Get Started
+                </a>
+                <a href="{{ url_for('portal.portal_docs') }}" class="btn btn-secondary">
+                    <i class="fas fa-book-open"></i> View Docs
+                </a>
+            </div>
+            <div class="hero-code">
+                <div class="code-header">
+                    <span class="dot red"></span>
+                    <span class="dot yellow"></span>
+                    <span class="dot green"></span>
+                    <span class="code-title">Quick Example</span>
+                </div>
+                <pre><code><span class="keyword">curl</span> -X GET "https://api.library.com/api/v2/books" \
+     -H "Authorization: Bearer YOUR_API_KEY" \
+     -H "Content-Type: application/json"</code></pre>
+            </div>
+        </div>
+        <div class="hero-image">
+            <div class="api-card">
+                <div class="api-card-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint">/api/v2/books</span>
+                </div>
+                <div class="api-card-body">
+                    <pre>{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "title": "Clean Code",
+      "author": "Robert C. Martin",
+      "isbn": "978-0132350884"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "total": 150
+  }
+}</pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <h2 class="section-title">Why Choose Our API?</h2>
+            <p class="section-subtitle">Everything you need to build amazing library applications</p>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3>Fast & Reliable</h3>
+                    <p>99.9% uptime with response times under 100ms. Built on scalable Kubernetes infrastructure.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Secure by Design</h3>
+                    <p>JWT authentication, rate limiting, and HTTPS encryption to protect your data.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <h3>RESTful Design</h3>
+                    <p>Clean, intuitive endpoints following REST best practices. Easy to integrate.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <h3>Comprehensive Docs</h3>
+                    <p>Detailed documentation with examples in multiple languages and SDKs.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Real-time Webhooks</h3>
+                    <p>Get notified instantly when books are borrowed, returned, or updated.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-puzzle-piece"></i>
+                    </div>
+                    <h3>Easy Integration</h3>
+                    <p>SDKs for Python, JavaScript, and more. Postman collection included.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- API Endpoints Preview -->
+    <section class="endpoints-preview">
+        <div class="container">
+            <h2 class="section-title">API Endpoints</h2>
+            <p class="section-subtitle">Explore our comprehensive API endpoints</p>
+            
+            <div class="endpoints-tabs">
+                <button class="tab-btn active" data-tab="books">📚 Books</button>
+                <button class="tab-btn" data-tab="users">👥 Users</button>
+                <button class="tab-btn" data-tab="borrows">📋 Borrows</button>
+                <button class="tab-btn" data-tab="auth">🔐 Auth</button>
+            </div>
+            
+            <div class="endpoints-content">
+                <div class="tab-content active" id="books">
+                    <div class="endpoint-list">
+                        <div class="endpoint-item">
+                            <span class="method get">GET</span>
+                            <span class="path">/api/v2/books</span>
+                            <span class="desc">List all books with pagination</span>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method get">GET</span>
+                            <span class="path">/api/v2/books/{id}</span>
+                            <span class="desc">Get book details</span>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method post">POST</span>
+                            <span class="path">/api/v2/books</span>
+                            <span class="desc">Create a new book</span>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method put">PUT</span>
+                            <span class="path">/api/v2/books/{id}</span>
+                            <span class="desc">Update book information</span>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method delete">DELETE</span>
+                            <span class="path">/api/v2/books/{id}</span>
+                            <span class="desc">Delete a book</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="users">
+                    <div class="endpoint-list">
+                        <div class="endpoint-item">
+                            <span class="method get">GET</span>
+                            <span class="path">/api/v2/users</span>
+                            <span class="desc">List all users</span>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method get">GET</span>
+                            <span class="path">/api/v2/users/{id}</span>
+                            <span class="desc">Get user profile</span>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method put">PUT</span>
+                            <span class="path">/api/v2/users/{id}</span>
+                            <span class="desc">Update user profile</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="borrows">
+                    <div class="endpoint-list">
+                        <div class="endpoint-item">
+                            <span class="method get">GET</span>
+                            <span class="path">/api/v2/borrows</span>
+                            <span class="desc">List all borrow records</span>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method post">POST</span>
+                            <span class="path">/api/v2/borrows</span>
+                            <span class="desc">Borrow a book</span>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method post">POST</span>
+                            <span class="path">/api/v2/borrows/{id}/return</span>
+                            <span class="desc">Return a borrowed book</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="auth">
+                    <div class="endpoint-list">
+                        <div class="endpoint-item">
+                            <span class="method post">POST</span>
+                            <span class="path">/api/auth/register</span>
+                            <span class="desc">Register new user</span>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method post">POST</span>
+                            <span class="path">/api/auth/login</span>
+                            <span class="desc">Login and get JWT token</span>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method get">GET</span>
+                            <span class="path">/api/auth/me</span>
+                            <span class="desc">Get current user info</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Code Examples -->
+    <section class="code-examples">
+        <div class="container">
+            <h2 class="section-title">Code Examples</h2>
+            <p class="section-subtitle">Get started quickly with our code samples</p>
+            
+            <div class="code-tabs">
+                <button class="code-tab active" data-lang="python">Python</button>
+                <button class="code-tab" data-lang="javascript">JavaScript</button>
+                <button class="code-tab" data-lang="curl">cURL</button>
+            </div>
+            
+            <div class="code-panels">
+                <div class="code-panel active" id="python">
+                    <pre><code><span class="keyword">import</span> requests
+
+<span class="comment"># Authentication</span>
+response = requests.post(<span class="string">"https://api.library.com/api/auth/login"</span>, json={
+    <span class="string">"username"</span>: <span class="string">"demo_user"</span>,
+    <span class="string">"password"</span>: <span class="string">"demo_pass"</span>
+})
+token = response.json()[<span class="string">"token"</span>]
+
+<span class="comment"># Get all books</span>
+headers = {<span class="string">"Authorization"</span>: <span class="string">f"Bearer {token}"</span>}
+books = requests.get(<span class="string">"https://api.library.com/api/v2/books"</span>, headers=headers)
+
+<span class="keyword">print</span>(books.json())</code></pre>
+                </div>
+                
+                <div class="code-panel" id="javascript">
+                    <pre><code><span class="comment">// Authentication</span>
+<span class="keyword">const</span> loginResponse = <span class="keyword">await</span> fetch(<span class="string">'https://api.library.com/api/auth/login'</span>, {
+    method: <span class="string">'POST'</span>,
+    headers: { <span class="string">'Content-Type'</span>: <span class="string">'application/json'</span> },
+    body: JSON.stringify({
+        username: <span class="string">'demo_user'</span>,
+        password: <span class="string">'demo_pass'</span>
+    })
+});
+<span class="keyword">const</span> { token } = <span class="keyword">await</span> loginResponse.json();
+
+<span class="comment">// Get all books</span>
+<span class="keyword">const</span> booksResponse = <span class="keyword">await</span> fetch(<span class="string">'https://api.library.com/api/v2/books'</span>, {
+    headers: { <span class="string">'Authorization'</span>: <span class="string">`Bearer ${token}`</span> }
+});
+<span class="keyword">const</span> books = <span class="keyword">await</span> booksResponse.json();
+
+console.log(books);</code></pre>
+                </div>
+                
+                <div class="code-panel" id="curl">
+                    <pre><code><span class="comment"># Login and get token</span>
+<span class="keyword">curl</span> -X POST https://api.library.com/api/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"username": "demo_user", "password": "demo_pass"}'
+
+<span class="comment"># Get all books</span>
+<span class="keyword">curl</span> -X GET https://api.library.com/api/v2/books \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     -H "Content-Type: application/json"
+
+<span class="comment"># Create a new book</span>
+<span class="keyword">curl</span> -X POST https://api.library.com/api/v2/books \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"title": "New Book", "author": "Author Name", "isbn": "123-456"}'</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number">99.9%</div>
+                    <div class="stat-label">Uptime</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">&lt;100ms</div>
+                    <div class="stat-label">Avg Response</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">10K+</div>
+                    <div class="stat-label">API Calls/Day</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-label">Support</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="container">
+            <h2>Ready to Build?</h2>
+            <p>Start integrating our Library API into your application today</p>
+            <div class="cta-buttons">
+                <a href="{{ url_for('portal.portal_getting_started') }}" class="btn btn-primary btn-large">
+                    <i class="fas fa-rocket"></i> Get Your API Key
+                </a>
+                <a href="/swagger/" class="btn btn-outline btn-large" target="_blank">
+                    <i class="fas fa-flask"></i> Try in Swagger
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-section">
+                    <h4><i class="fas fa-book"></i> Library API</h4>
+                    <p>A powerful RESTful API for library management systems.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="{{ url_for('portal.portal_docs') }}">Documentation</a></li>
+                        <li><a href="{{ url_for('portal.portal_explorer') }}">API Explorer</a></li>
+                        <li><a href="/swagger/">Swagger UI</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="{{ url_for('portal.portal_getting_started') }}">Getting Started</a></li>
+                        <li><a href="#">FAQ</a></li>
+                        <li><a href="#">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Connect</h4>
+                    <div class="social-links">
+                        <a href="https://github.com/tuanjhg/INT3505E_02_demo" target="_blank"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Library Management System. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/portal.js') }}"></script>
+</body>
+</html>

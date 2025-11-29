@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation - Library API</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/portal.css') }}">
+    <style>
+        .docs-layout {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            min-height: calc(100vh - 80px);
+            margin-top: 80px;
+        }
+        
+        .sidebar {
+            background: var(--dark);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px 0;
+            position: fixed;
+            left: 0;
+            top: 80px;
+            bottom: 0;
+            width: 260px;
+            overflow-y: auto;
+        }
+        
+        .sidebar-section {
+            margin-bottom: 30px;
+            padding: 0 20px;
+        }
+        
+        .sidebar-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--gray);
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            color: var(--gray);
+            text-decoration: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-nav a:hover,
+        .sidebar-nav a.active {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary-light);
+        }
+        
+        .sidebar-nav a i {
+            width: 20px;
+            text-align: center;
+        }
+        
+        .docs-content {
+            margin-left: 260px;
+            padding: 40px 60px;
+        }
+        
+        .docs-header {
+            margin-bottom: 40px;
+        }
+        
+        .docs-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .docs-header p {
+            color: var(--gray);
+            font-size: 1.1rem;
+        }
+        
+        .doc-section {
+            margin-bottom: 60px;
+        }
+        
+        .doc-section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .doc-section h3 {
+            font-size: 1.1rem;
+            margin: 30px 0 15px;
+            color: var(--primary-light);
+        }
+        
+        .doc-section p {
+            color: var(--gray);
+            margin-bottom: 15px;
+        }
+        
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .param-table th,
+        .param-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .param-table th {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--white);
+            font-weight: 600;
+        }
+        
+        .param-table td {
+            color: var(--gray);
+        }
+        
+        .param-table td code {
+            background: rgba(99, 102, 241, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: var(--primary-light);
+        }
+        
+        .required {
+            color: var(--danger);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .api-endpoint-card {
+            background: var(--dark);
+            border-radius: var(--radius);
+            margin: 20px 0;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .api-endpoint-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 16px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .api-endpoint-header h4 {
+            flex: 1;
+            font-weight: 500;
+        }
+        
+        .api-endpoint-body {
+            padding: 20px;
+        }
+        
+        .response-example {
+            background: var(--darker);
+            border-radius: var(--radius-sm);
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .response-example pre {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: var(--light);
+            overflow-x: auto;
+        }
+        
+        .info-box {
+            background: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+        }
+        
+        .info-box.warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: var(--warning);
+        }
+        
+        .info-box p {
+            margin: 0;
+            color: var(--light);
+        }
+        
+        @media (max-width: 1024px) {
+            .sidebar {
+                display: none;
+            }
+            .docs-content {
+                margin-left: 0;
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('portal.index') }}" class="nav-logo">
+                <i class="fas fa-book-open"></i>
+                Library API
+            </a>
+            <div class="nav-links">
+                <a href="{{ url_for('portal.index') }}">Home</a>
+                <a href="{{ url_for('portal.docs') }}" class="active">Docs</a>
+                <a href="{{ url_for('portal.explorer') }}">API Explorer</a>
+                <a href="{{ url_for('portal.getting_started') }}">Getting Started</a>
+                <a href="/swagger" class="btn-swagger">
+                    <i class="fas fa-bolt"></i> Swagger UI
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Docs Layout -->
+    <div class="docs-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Getting Started</div>
+                <nav class="sidebar-nav">
+                    <a href="#introduction"><i class="fas fa-info-circle"></i> Introduction</a>
+                    <a href="#authentication"><i class="fas fa-key"></i> Authentication</a>
+                    <a href="#errors"><i class="fas fa-exclamation-triangle"></i> Error Handling</a>
+                </nav>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">API Reference</div>
+                <nav class="sidebar-nav">
+                    <a href="#books"><i class="fas fa-book"></i> Books</a>
+                    <a href="#users"><i class="fas fa-users"></i> Users</a>
+                    <a href="#borrows"><i class="fas fa-exchange-alt"></i> Borrows</a>
+                    <a href="#auth"><i class="fas fa-lock"></i> Auth</a>
+                </nav>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">Resources</div>
+                <nav class="sidebar-nav">
+                    <a href="#pagination"><i class="fas fa-list"></i> Pagination</a>
+                    <a href="#rate-limiting"><i class="fas fa-tachometer-alt"></i> Rate Limiting</a>
+                    <a href="#webhooks"><i class="fas fa-plug"></i> Webhooks</a>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Content -->
+        <main class="docs-content">
+            <header class="docs-header">
+                <h1>API Documentation</h1>
+                <p>Complete reference for the Library Management API</p>
+            </header>
+
+            <!-- Introduction -->
+            <section id="introduction" class="doc-section">
+                <h2><i class="fas fa-info-circle"></i> Introduction</h2>
+                <p>
+                    Library API là RESTful API cho hệ thống quản lý thư viện. API tuân thủ các nguyên tắc REST và sử dụng JSON cho tất cả các request/response.
+                </p>
+                
+                <h3>Base URL</h3>
+                <div class="response-example">
+                    <pre>https://api.library.example.com/api/v1</pre>
+                </div>
+                
+                <h3>Content Type</h3>
+                <p>Tất cả các request đều phải gửi header:</p>
+                <div class="response-example">
+                    <pre>Content-Type: application/json</pre>
+                </div>
+            </section>
+
+            <!-- Authentication -->
+            <section id="authentication" class="doc-section">
+                <h2><i class="fas fa-key"></i> Authentication</h2>
+                <p>
+                    API sử dụng JWT (JSON Web Token) để xác thực. Bạn cần lấy token bằng cách đăng nhập, sau đó gửi token trong header của mỗi request.
+                </p>
+                
+                <div class="api-endpoint-card">
+                    <div class="api-endpoint-header">
+                        <span class="method post">POST</span>
+                        <code class="endpoint">/auth/login</code>
+                        <h4>Đăng nhập</h4>
+                    </div>
+                    <div class="api-endpoint-body">
+                        <h3>Request Body</h3>
+                        <table class="param-table">
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td><code>email</code> <span class="required">*</span></td>
+                                <td>string</td>
+                                <td>Email đăng nhập</td>
+                            </tr>
+                            <tr>
+                                <td><code>password</code> <span class="required">*</span></td>
+                                <td>string</td>
+                                <td>Mật khẩu</td>
+                            </tr>
+                        </table>
+                        
+                        <h3>Response</h3>
+                        <div class="response-example">
+                            <pre>{
+    "access_token": "eyJhbGciOiJIUzI1NiIs...",
+    "token_type": "bearer",
+    "expires_in": 3600
+}</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <p><strong>💡 Tip:</strong> Gửi token trong header như sau: <code>Authorization: Bearer {token}</code></p>
+                </div>
+            </section>
+
+            <!-- Error Handling -->
+            <section id="errors" class="doc-section">
+                <h2><i class="fas fa-exclamation-triangle"></i> Error Handling</h2>
+                <p>API trả về lỗi với format thống nhất:</p>
+                
+                <div class="response-example">
+                    <pre>{
+    "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Email is required",
+        "details": [...]
+    }
+}</pre>
+                </div>
+                
+                <h3>HTTP Status Codes</h3>
+                <table class="param-table">
+                    <tr>
+                        <th>Code</th>
+                        <th>Meaning</th>
+                    </tr>
+                    <tr>
+                        <td><code>200</code></td>
+                        <td>Success</td>
+                    </tr>
+                    <tr>
+                        <td><code>201</code></td>
+                        <td>Created</td>
+                    </tr>
+                    <tr>
+                        <td><code>400</code></td>
+                        <td>Bad Request - Dữ liệu không hợp lệ</td>
+                    </tr>
+                    <tr>
+                        <td><code>401</code></td>
+                        <td>Unauthorized - Cần đăng nhập</td>
+                    </tr>
+                    <tr>
+                        <td><code>403</code></td>
+                        <td>Forbidden - Không có quyền</td>
+                    </tr>
+                    <tr>
+                        <td><code>404</code></td>
+                        <td>Not Found - Không tìm thấy</td>
+                    </tr>
+                    <tr>
+                        <td><code>429</code></td>
+                        <td>Too Many Requests - Vượt rate limit</td>
+                    </tr>
+                    <tr>
+                        <td><code>500</code></td>
+                        <td>Internal Server Error</td>
+                    </tr>
+                </table>
+            </section>
+
+            <!-- Books API -->
+            <section id="books" class="doc-section">
+                <h2><i class="fas fa-book"></i> Books API</h2>
+                <p>Endpoints để quản lý sách trong thư viện.</p>
+                
+                <!-- GET /books -->
+                <div class="api-endpoint-card">
+                    <div class="api-endpoint-header">
+                        <span class="method get">GET</span>
+                        <code class="endpoint">/books</code>
+                        <h4>Lấy danh sách sách</h4>
+                    </div>
+                    <div class="api-endpoint-body">
+                        <h3>Query Parameters</h3>
+                        <table class="param-table">
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td><code>page</code></td>
+                                <td>integer</td>
+                                <td>Số trang (default: 1)</td>
+                            </tr>
+                            <tr>
+                                <td><code>per_page</code></td>
+                                <td>integer</td>
+                                <td>Số item mỗi trang (default: 10)</td>
+                            </tr>
+                            <tr>
+                                <td><code>search</code></td>
+                                <td>string</td>
+                                <td>Tìm kiếm theo title hoặc author</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- POST /books -->
+                <div class="api-endpoint-card">
+                    <div class="api-endpoint-header">
+                        <span class="method post">POST</span>
+                        <code class="endpoint">/books</code>
+                        <h4>Thêm sách mới</h4>
+                    </div>
+                    <div class="api-endpoint-body">
+                        <h3>Request Body</h3>
+                        <table class="param-table">
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td><code>title</code> <span class="required">*</span></td>
+                                <td>string</td>
+                                <td>Tên sách</td>
+                            </tr>
+                            <tr>
+                                <td><code>author</code> <span class="required">*</span></td>
+                                <td>string</td>
+                                <td>Tác giả</td>
+                            </tr>
+                            <tr>
+                                <td><code>isbn</code></td>
+                                <td>string</td>
+                                <td>Mã ISBN</td>
+                            </tr>
+                            <tr>
+                                <td><code>quantity</code></td>
+                                <td>integer</td>
+                                <td>Số lượng (default: 1)</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- GET /books/:id -->
+                <div class="api-endpoint-card">
+                    <div class="api-endpoint-header">
+                        <span class="method get">GET</span>
+                        <code class="endpoint">/books/{'{id}'}</code>
+                        <h4>Lấy thông tin sách</h4>
+                    </div>
+                </div>
+                
+                <!-- PUT /books/:id -->
+                <div class="api-endpoint-card">
+                    <div class="api-endpoint-header">
+                        <span class="method put">PUT</span>
+                        <code class="endpoint">/books/{'{id}'}</code>
+                        <h4>Cập nhật sách</h4>
+                    </div>
+                </div>
+                
+                <!-- DELETE /books/:id -->
+                <div class="api-endpoint-card">
+                    <div class="api-endpoint-header">
+                        <span class="method delete">DELETE</span>
+                        <code class="endpoint">/books/{'{id}'}</code>
+                        <h4>Xóa sách</h4>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Rate Limiting -->
+            <section id="rate-limiting" class="doc-section">
+                <h2><i class="fas fa-tachometer-alt"></i> Rate Limiting</h2>
+                <p>API áp dụng rate limiting để bảo vệ hệ thống. Mỗi client được giới hạn số request trong một khoảng thời gian.</p>
+                
+                <table class="param-table">
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Limit</th>
+                    </tr>
+                    <tr>
+                        <td>Login/Register</td>
+                        <td>5 requests / phút</td>
+                    </tr>
+                    <tr>
+                        <td>General API</td>
+                        <td>100 requests / phút</td>
+                    </tr>
+                </table>
+                
+                <div class="info-box warning">
+                    <p><strong>⚠️ Warning:</strong> Vượt quá rate limit sẽ nhận response 429 Too Many Requests</p>
+                </div>
+            </section>
+
+            <!-- Pagination -->
+            <section id="pagination" class="doc-section">
+                <h2><i class="fas fa-list"></i> Pagination</h2>
+                <p>Tất cả các endpoint trả về list đều hỗ trợ pagination:</p>
+                
+                <div class="response-example">
+                    <pre>{
+    "data": [...],
+    "pagination": {
+        "page": 1,
+        "per_page": 10,
+        "total": 100,
+        "total_pages": 10,
+        "has_next": true,
+        "has_prev": false
+    },
+    "_links": {
+        "self": "/api/books?page=1",
+        "next": "/api/books?page=2",
+        "last": "/api/books?page=10"
+    }
+}</pre>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/portal.js') }}"></script>
+</body>
+</html>
