@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation - Library API</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+    <!-- Font Awesome for brand icons only -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #6366f1;
+            --primary-bg: #eef2ff;
+            --secondary: #0ea5e9;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --sidebar-width: 280px;
+            --sidebar-collapsed: 60px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .nav-logo .material-symbols-rounded {
+            font-size: 28px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .nav-links a {
+            padding: 8px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s;
+        }
+
+        .nav-links a:hover {
+            background: var(--bg-tertiary);
+            color: var(--text);
+        }
+
+        .nav-links a.active {
+            background: var(--primary-bg);
+            color: var(--primary);
+        }
+
+        .btn-swagger {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white !important;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-swagger:hover {
+            opacity: 0.9;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%) !important;
+        }
+
+        /* Layout */
+        .docs-layout {
+            display: flex;
+            margin-top: 64px;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            left: 0;
+            top: 64px;
+            bottom: 0;
+            overflow-y: auto;
+            transition: width 0.3s ease, transform 0.3s ease;
+            z-index: 100;
+        }
+
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed);
+        }
+
+        .sidebar.collapsed .sidebar-section {
+            padding: 0 10px;
+        }
+
+        .sidebar.collapsed .sidebar-title,
+        .sidebar.collapsed .nav-text {
+            display: none;
+        }
+
+        .sidebar.collapsed .sidebar-nav a {
+            justify-content: center;
+            padding: 12px;
+        }
+
+        .sidebar.collapsed .sidebar-nav a .material-symbols-rounded {
+            margin: 0;
+        }
+
+        .sidebar-toggle {
+            position: absolute;
+            top: 12px;
+            right: -16px;
+            width: 32px;
+            height: 32px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: all 0.2s;
+            z-index: 10;
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--primary-bg);
+            color: var(--primary);
+        }
+
+        .sidebar-toggle .material-symbols-rounded {
+            font-size: 18px;
+            color: var(--text-secondary);
+            transition: transform 0.3s;
+        }
+
+        .sidebar.collapsed .sidebar-toggle .material-symbols-rounded {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-header-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header-icon .material-symbols-rounded {
+            font-size: 24px;
+        }
+
+        .sidebar-header-text h3 {
+            font-size: 0.95rem;
+            color: var(--text);
+        }
+
+        .sidebar-header-text span {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .sidebar.collapsed .sidebar-header-text {
+            display: none;
+        }
+
+        .sidebar-content {
+            padding: 16px 0;
+        }
+
+        .sidebar-section {
+            margin-bottom: 24px;
+            padding: 0 16px;
+        }
+
+        .sidebar-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            padding: 0 12px;
+            font-weight: 600;
+        }
+
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin-bottom: 2px;
+        }
+
+        .sidebar-nav a:hover {
+            background: var(--bg-tertiary);
+            color: var(--text);
+        }
+
+        .sidebar-nav a.active {
+            background: var(--primary-bg);
+            color: var(--primary);
+        }
+
+        .sidebar-nav a .material-symbols-rounded {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        /* Main Content */
+        .docs-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 40px 60px;
+            max-width: 900px;
+            transition: margin-left 0.3s ease;
+        }
+
+        .sidebar.collapsed ~ .docs-content {
+            margin-left: var(--sidebar-collapsed);
+        }
+
+        .docs-header {
+            margin-bottom: 48px;
+        }
+
+        .docs-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 12px;
+        }
+
+        .docs-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Doc Sections */
+        .doc-section {
+            margin-bottom: 64px;
+            background: var(--bg);
+            border-radius: var(--radius);
+            padding: 32px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .doc-section h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .doc-section h2 .material-symbols-rounded {
+            color: var(--primary);
+            font-size: 28px;
+            vertical-align: middle;
+        }
+
+        .doc-section h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin: 24px 0 12px;
+        }
+
+        .doc-section p {
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            line-height: 1.7;
+        }
+
+        /* Tables */
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .param-table th,
+        .param-table td {
+            padding: 14px 16px;
+            text-align: left;
+        }
+
+        .param-table th {
+            background: var(--bg-tertiary);
+            color: var(--text);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .param-table td {
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+        }
+
+        .param-table tr:hover td {
+            background: var(--bg-secondary);
+        }
+
+        .param-table td code {
+            background: var(--primary-bg);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: var(--primary);
+        }
+
+        .required {
+            background: #fef2f2;
+            color: var(--danger);
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+        }
+
+        /* API Cards */
+        .api-endpoint-card {
+            background: var(--bg);
+            border-radius: var(--radius);
+            margin: 20px 0;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .api-endpoint-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 20px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .api-endpoint-header h4 {
+            flex: 1;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .method {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .method.get { background: #dcfce7; color: #166534; }
+        .method.post { background: #dbeafe; color: #1e40af; }
+        .method.put { background: #fef3c7; color: #92400e; }
+        .method.delete { background: #fee2e2; color: #991b1b; }
+
+        .endpoint {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            color: var(--text);
+            background: var(--bg);
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+
+        .api-endpoint-body {
+            padding: 20px;
+        }
+
+        /* Code blocks */
+        .response-example {
+            background: #1e293b;
+            border-radius: var(--radius-sm);
+            padding: 16px 20px;
+            margin-top: 12px;
+            overflow-x: auto;
+        }
+
+        .response-example pre {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: #e2e8f0;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* Info boxes */
+        .info-box {
+            background: var(--primary-bg);
+            border-left: 4px solid var(--primary);
+            padding: 16px 20px;
+            margin: 20px 0;
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+        }
+
+        .info-box.warning {
+            background: #fffbeb;
+            border-left-color: var(--warning);
+        }
+
+        .info-box.success {
+            background: #ecfdf5;
+            border-left-color: var(--success);
+        }
+
+        .info-box p {
+            margin: 0;
+            color: var(--text);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .docs-content {
+                margin-left: 0;
+                padding: 24px;
+            }
+            .mobile-toggle {
+                display: flex;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            .docs-header h1 {
+                font-size: 1.75rem;
+            }
+            .doc-section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="{{ url_for('portal.index') }}" class="nav-logo">
+            <span class="material-symbols-rounded">menu_book</span>
+            Library API
+        </a>
+        <div class="nav-links">
+            <a href="{{ url_for('portal.index') }}">Home</a>
+            <a href="{{ url_for('portal.docs') }}" class="active">Docs</a>
+            <a href="{{ url_for('portal.explorer') }}">API Explorer</a>
+            <a href="{{ url_for('portal.getting_started') }}">Getting Started</a>
+            <a href="/swagger/" class="btn-swagger">
+                <span class="material-symbols-rounded">bolt</span> Swagger UI
+            </a>
+        </div>
+    </nav>
+
+    <!-- Docs Layout -->
+    <div class="docs-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <button class="sidebar-toggle" onclick="toggleSidebar()" title="Thu gọn/Mở rộng">
+                <span class="material-symbols-rounded">chevron_left</span>
+            </button>
+            
+            <div class="sidebar-header">
+                <div class="sidebar-header-icon">
+                    <span class="material-symbols-rounded">code</span>
+                </div>
+                <div class="sidebar-header-text">
+                    <h3>API Docs</h3>
+                    <span>v1.0.0</span>
+                </div>
+            </div>
+            
+            <div class="sidebar-content">
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Getting Started</div>
+                    <nav class="sidebar-nav">
+                        <a href="#introduction" class="active">
+                            <span class="material-symbols-rounded">info</span>
+                            <span class="nav-text">Introduction</span>
+                        </a>
+                        <a href="#authentication">
+                            <span class="material-symbols-rounded">key</span>
+                            <span class="nav-text">Authentication</span>
+                        </a>
+                        <a href="#errors">
+                            <span class="material-symbols-rounded">warning</span>
+                            <span class="nav-text">Error Handling</span>
+                        </a>
+                    </nav>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-title">API Reference</div>
+                    <nav class="sidebar-nav">
+                        <a href="#books">
+                            <span class="material-symbols-rounded">library_books</span>
+                            <span class="nav-text">Books</span>
+                        </a>
+                        <a href="#users">
+                            <span class="material-symbols-rounded">group</span>
+                            <span class="nav-text">Users</span>
+                        </a>
+                        <a href="#borrows">
+                            <span class="material-symbols-rounded">swap_horiz</span>
+                            <span class="nav-text">Borrows</span>
+                        </a>
+                        <a href="#auth">
+                            <span class="material-symbols-rounded">lock</span>
+                            <span class="nav-text">Auth</span>
+                        </a>
+                    </nav>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Resources</div>
+                    <nav class="sidebar-nav">
+                        <a href="#pagination">
+                            <span class="material-symbols-rounded">view_list</span>
+                            <span class="nav-text">Pagination</span>
+                        </a>
+                        <a href="#rate-limiting">
+                            <span class="material-symbols-rounded">speed</span>
+                            <span class="nav-text">Rate Limiting</span>
+                        </a>
+                        <a href="#webhooks">
+                            <span class="material-symbols-rounded">webhook</span>
+                            <span class="nav-text">Webhooks</span>
+                        </a>
+                    </nav>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Content -->
+        <main class="docs-content">
+            <header class="docs-header">
+                <h1>📚 API Documentation</h1>
+                <p>Complete reference for the Library Management API</p>
+            </header>
+
+            <!-- Introduction -->
+            <section id="introduction" class="doc-section">
+                <h2><span class="material-symbols-rounded">info</span> Introduction</h2>
+                <p>
+                    Library API là RESTful API cho hệ thống quản lý thư viện. API tuân thủ các nguyên tắc REST và sử dụng JSON cho tất cả các request/response.
+                </p>
+                
+                <h3>Base URL</h3>
+                <div class="response-example">
+                    <pre>https://api.library.example.com/api/v1</pre>
+                </div>
+                
+                <h3>Content Type</h3>
+                <p>Tất cả các request đều phải gửi header:</p>
+                <div class="response-example">
+                    <pre>Content-Type: application/json</pre>
+                </div>
+                
+                <div class="info-box success">
+                    <p>💡 <strong>Tip:</strong> Sử dụng API Explorer để thử nghiệm các endpoint trực tiếp!</p>
+                </div>
+            </section>
+
+            <!-- Authentication -->
+            <section id="authentication" class="doc-section">
+                <h2><span class="material-symbols-rounded">key</span> Authentication</h2>
+                <p>
+                    API sử dụng JWT (JSON Web Token) để xác thực. Bạn cần lấy token bằng cách đăng nhập, sau đó gửi token trong header của mỗi request.
+                </p>
+                
+                <div class="api-endpoint-card">
+                    <div class="api-endpoint-header">
+                        <span class="method post">POST</span>
+                        <code class="endpoint">/auth/login</code>
+                        <h4>Đăng nhập</h4>
+                    </div>
+                    <div class="api-endpoint-body">
+                        <h3>Request Body</h3>
+                        <table class="param-table">
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td><code>email</code><span class="required">Required</span></td>
+                                <td>string</td>
+                                <td>Email đăng nhập</td>
+                            </tr>
+                            <tr>
+                                <td><code>password</code><span class="required">Required</span></td>
+                                <td>string</td>
+                                <td>Mật khẩu</td>
+                            </tr>
+                        </table>
+                        
+                        <h3>Response</h3>
+                        <div class="response-example">
+                            <pre>{
+    "access_token": "eyJhbGciOiJIUzI1NiIs...",
+    "token_type": "bearer",
+    "expires_in": 3600
+}</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <p>🔑 Gửi token trong header: <code>Authorization: Bearer {token}</code></p>
+                </div>
+            </section>
+
+            <!-- Error Handling -->
+            <section id="errors" class="doc-section">
+                <h2><span class="material-symbols-rounded">warning</span> Error Handling</h2>
+                <p>API trả về lỗi với format thống nhất:</p>
+                
+                <div class="response-example">
+                    <pre>{
+    "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Email is required",
+        "details": [...]
+    }
+}</pre>
+                </div>
+                
+                <h3>HTTP Status Codes</h3>
+                <table class="param-table">
+                    <tr>
+                        <th>Code</th>
+                        <th>Meaning</th>
+                    </tr>
+                    <tr>
+                        <td><code>200</code></td>
+                        <td>Success - Thành công</td>
+                    </tr>
+                    <tr>
+                        <td><code>201</code></td>
+                        <td>Created - Tạo mới thành công</td>
+                    </tr>
+                    <tr>
+                        <td><code>400</code></td>
+                        <td>Bad Request - Dữ liệu không hợp lệ</td>
+                    </tr>
+                    <tr>
+                        <td><code>401</code></td>
+                        <td>Unauthorized - Cần đăng nhập</td>
+                    </tr>
+                    <tr>
+                        <td><code>403</code></td>
+                        <td>Forbidden - Không có quyền truy cập</td>
+                    </tr>
+                    <tr>
+                        <td><code>404</code></td>
+                        <td>Not Found - Không tìm thấy resource</td>
+                    </tr>
+                    <tr>
+                        <td><code>429</code></td>
+                        <td>Too Many Requests - Vượt rate limit</td>
+                    </tr>
+                    <tr>
+                        <td><code>500</code></td>
+                        <td>Internal Server Error - Lỗi server</td>
+                    </tr>
+                </table>
+            </section>
+
+            <!-- Books API -->
+            <section id="books" class="doc-section">
+                <h2><span class="material-symbols-rounded">library_books</span> Books API</h2>
+                <p>Endpoints để quản lý sách trong thư viện.</p>
+                
+                <!-- GET /books -->
+                <div class="api-endpoint-card">
+                    <div class="api-endpoint-header">
+                        <span class="method get">GET</span>
+                        <code class="endpoint">/books</code>
+                        <h4>Lấy danh sách sách</h4>
+                    </div>
+                    <div class="api-endpoint-body">
+                        <h3>Query Parameters</h3>
+                        <table class="param-table">
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td><code>page</code></td>
+                                <td>integer</td>
+                                <td>Số trang (default: 1)</td>
+                            </tr>
+                            <tr>
+                                <td><code>per_page</code></td>
+                                <td>integer</td>
+                                <td>Số item mỗi trang (default: 10, max: 100)</td>
+                            </tr>
+                            <tr>
+                                <td><code>search</code></td>
+                                <td>string</td>
+                                <td>Tìm kiếm theo title hoặc author</td>
+                            </tr>
+                        </table>
+                        
+                        <h3>Response</h3>
+                        <div class="response-example">
+                            <pre>{
+    "data": [
+        {
+            "id": 1,
+            "title": "Clean Code",
+            "author": "Robert C. Martin",
+            "isbn": "978-0132350884",
+            "quantity": 5,
+            "available": 3
+        }
+    ],
+    "pagination": {
+        "page": 1,
+        "per_page": 10,
+        "total": 100
+    }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- POST /books -->
+                <div class="api-endpoint-card">
+                    <div class="api-endpoint-header">
+                        <span class="method post">POST</span>
+                        <code class="endpoint">/books</code>
+                        <h4>Thêm sách mới</h4>
+                    </div>
+                    <div class="api-endpoint-body">
+                        <h3>Request Body</h3>
+                        <table class="param-table">
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                            <tr>
+                                <td><code>title</code><span class="required">Required</span></td>
+                                <td>string</td>
+                                <td>Tên sách</td>
+                            </tr>
+                            <tr>
+                                <td><code>author</code><span class="required">Required</span></td>
+                                <td>string</td>
+                                <td>Tác giả</td>
+                            </tr>
+                            <tr>
+                                <td><code>isbn</code></td>
+                                <td>string</td>
+                                <td>Mã ISBN</td>
+                            </tr>
+                            <tr>
+                                <td><code>quantity</code></td>
+                                <td>integer</td>
+                                <td>Số lượng (default: 1)</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- GET /books/:id -->
+                <div class="api-endpoint-card">
+                    <div class="api-endpoint-header">
+                        <span class="method get">GET</span>
+                        <code class="endpoint">/books/{id}</code>
+                        <h4>Lấy thông tin sách theo ID</h4>
+                    </div>
+                </div>
+                
+                <!-- PUT /books/:id -->
+                <div class="api-endpoint-card">
+                    <div class="api-endpoint-header">
+                        <span class="method put">PUT</span>
+                        <code class="endpoint">/books/{id}</code>
+                        <h4>Cập nhật thông tin sách</h4>
+                    </div>
+                </div>
+                
+                <!-- DELETE /books/:id -->
+                <div class="api-endpoint-card">
+                    <div class="api-endpoint-header">
+                        <span class="method delete">DELETE</span>
+                        <code class="endpoint">/books/{id}</code>
+                        <h4>Xóa sách</h4>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Rate Limiting -->
+            <section id="rate-limiting" class="doc-section">
+                <h2><span class="material-symbols-rounded">speed</span> Rate Limiting</h2>
+                <p>API áp dụng rate limiting để bảo vệ hệ thống. Mỗi client được giới hạn số request trong một khoảng thời gian.</p>
+                
+                <table class="param-table">
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Limit</th>
+                        <th>Window</th>
+                    </tr>
+                    <tr>
+                        <td>Login/Register</td>
+                        <td>5 requests</td>
+                        <td>1 phút</td>
+                    </tr>
+                    <tr>
+                        <td>General API</td>
+                        <td>100 requests</td>
+                        <td>1 phút</td>
+                    </tr>
+                    <tr>
+                        <td>Search</td>
+                        <td>30 requests</td>
+                        <td>1 phút</td>
+                    </tr>
+                </table>
+                
+                <div class="info-box warning">
+                    <p>⚠️ <strong>Warning:</strong> Vượt quá rate limit sẽ nhận response 429 Too Many Requests. Header <code>Retry-After</code> sẽ cho biết thời gian chờ.</p>
+                </div>
+            </section>
+
+            <!-- Pagination -->
+            <section id="pagination" class="doc-section">
+                <h2><span class="material-symbols-rounded">view_list</span> Pagination</h2>
+                <p>Tất cả các endpoint trả về list đều hỗ trợ pagination theo chuẩn HATEOAS:</p>
+                
+                <div class="response-example">
+                    <pre>{
+    "data": [...],
+    "pagination": {
+        "page": 1,
+        "per_page": 10,
+        "total": 100,
+        "total_pages": 10,
+        "has_next": true,
+        "has_prev": false
+    },
+    "_links": {
+        "self": "/api/books?page=1",
+        "next": "/api/books?page=2",
+        "last": "/api/books?page=10"
+    }
+}</pre>
+                </div>
+                
+                <div class="info-box success">
+                    <p>✅ Sử dụng <code>_links</code> để navigate giữa các trang thay vì build URL thủ công.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Toggle sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+            
+            // Save state to localStorage
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        }
+        
+        // Restore sidebar state
+        document.addEventListener('DOMContentLoaded', function() {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                document.getElementById('sidebar').classList.add('collapsed');
+            }
+            
+            // Active link highlighting based on scroll
+            const sections = document.querySelectorAll('.doc-section');
+            const navLinks = document.querySelectorAll('.sidebar-nav a');
+            
+            window.addEventListener('scroll', function() {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - 100;
+                    if (window.scrollY >= sectionTop) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + current) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+            
+            // Smooth scroll for anchor links
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetSection = document.getElementById(targetId);
+                    if (targetSection) {
+                        targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

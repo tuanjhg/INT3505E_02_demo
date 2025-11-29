@@ -72,6 +72,10 @@ def create_app(config=None):
     from routes.web_routes import web_bp
     app.register_blueprint(web_bp)
     
+    # Register Developer Portal routes
+    from routes.portal_routes import portal_bp
+    app.register_blueprint(portal_bp)
+    
     # Suppress Chrome DevTools 404 log noise
     @app.route('/.well-known/appspecific/com.chrome.devtools.json')
     def chrome_devtools():
